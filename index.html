@@ -7,13 +7,11 @@
   
   <!-- Model Viewer'ı doğru şekilde dahil et -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
 </head>
 <body>
   <h1>AR Model in Viewer</h1>
   
   <!-- Model-viewer bileşenini burada kullanıyoruz -->
-
   <model-viewer 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
@@ -81,5 +79,15 @@
       display: block;
     }
   </style>
+
+  <script>
+    // Sayfa yüklendiğinde AR'ye otomatik geçiş yapacak kod
+    document.addEventListener('DOMContentLoaded', function() {
+      const modelViewer = document.querySelector('model-viewer');
+      if (modelViewer) {
+        modelViewer.enterAR();
+      }
+    });
+  </script>
 </body>
 </html>
