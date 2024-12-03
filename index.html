@@ -4,12 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Model Viewer AR</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <script>
+  <script type="module">
+    import '@google/model-viewer';
+
     window.addEventListener("load", () => {
-      var modelViewer = document.querySelector('model-viewer');
-      console.log("Can activate AR: " + modelViewer.canActivateAR);
-      modelViewer.activateAR();
+      const modelViewer = document.querySelector('model-viewer');
+      
+      // WebXR API'si ile AR'yi etkinleştir
+      if (navigator.xr) {
+        modelViewer.setAttribute('ar', '');
+        modelViewer.setAttribute('ar-modes', 'webxr');
+      } else {
+        alert("WebXR AR desteği bulunamadı.");
+      }
     });
   </script>
 </head>
@@ -19,8 +26,6 @@
   <model-viewer 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
-    ar
-    ar-modes="scene-viewer quick-look" 
     camera-controls 
     auto-rotate 
     style="width: 100%; height: 500px;">
