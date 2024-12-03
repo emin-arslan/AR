@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Viewer AR Example</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer@2.6.1"></script>
+  <title>Model Viewer AR</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script>
+    window.addEventListener("load", () => {
+      var modelViewer = document.querySelector('model-viewer');
+      console.log("Can activate AR: " + modelViewer.canActivateAR);
+      modelViewer.activateAR();
+    });
+  </script>
 </head>
 <body>
-  <h1>3D Model in AR</h1>
+  <h1>AR Model in Viewer</h1>
   
-  <!-- Model Viewer -->
   <model-viewer 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
@@ -19,19 +25,5 @@
     auto-rotate 
     style="width: 100%; height: 500px;">
   </model-viewer>
-
-  <script>
-    window.addEventListener("load", () => {
-      var modelViewer = document.querySelector('model-viewer');
-      
-      // AR'yi destekleyip desteklemediğini kontrol et
-      if (modelViewer.canActivateAR) {
-        console.log("AR aktif edilebilir");
-        modelViewer.activateAR(); // AR'yi otomatik olarak başlat
-      } else {
-        console.log("AR aktif edilemiyor");
-      }
-    });
-  </script>
 </body>
 </html>
