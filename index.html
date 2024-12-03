@@ -5,76 +5,82 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Model Viewer AR</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
-  <h1>AR Model in Viewer</h1>
+  <div id="qr-reader">
+    <video id="video" style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+  </div>
 
-  <model-viewer 
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-    alt="Astronaut Model"
-    ar
-    ar-modes="webxr quick-look" 
-    camera-controls 
-    auto-rotate 
-    style="width: 100%; height: 500px;">
-    <button slot="ar-button" id="ar-button">
-      View in your space
-    </button>
-    <button id="ar-failure">
-      AR is not tracking!
-    </button>
-  </model-viewer>
+  <div id="ar-container" style="display:none;">
+    <model-viewer 
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
+      alt="Astronaut Model"
+      ar
+      ar-modes="webxr quick-look" 
+      camera-controls 
+      auto-rotate 
+      style="width: 100%; height: 500px;">
+      <button slot="ar-button" id="ar-button">
+        View in your space
+      </button>
+      <button id="ar-failure">
+        AR is not tracking!
+      </button>
+    </model-viewer>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const qrReaderContainer = document.getElementById('qr-reader');
+    const arContainer = document.getElementById('ar-container');
+
+    // QR Kod tarama fonksiyonu
+    function startQRScanner() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(function(stream) {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
+          requestAnimationFrame(tick);
+        });
+    }
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        var imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+        var code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        
+        if (code) {
+          // QR kod başarıyla tarandığında
+          console.log("QR Code detected:", code.data);
+          if (code.data === window.location.href) {
+            // Eğer QR kod mevcut sayfanın URL'si ile eşleşiyorsa AR modunu aç
+            qrReaderContainer.style.display = 'none';
+            arContainer.style.display = 'block';
+            // Kamera akışını durdur
+            video.srcObject.getTracks().forEach(track => track.stop());
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // Sayfa yüklendiğinde QR tarayıcıyı başlat
+    window.onload = function() {
+      startQRScanner();
+    };
+  </script>
 
   <style>
-    model-viewer {
-      background-color: #eee;
-      overflow-x: hidden;
-    }
-
-    #ar-button {
-      background-image: url(../../assets/ic_view_in_ar_new_googblue_48dp.png);
-      background-repeat: no-repeat;
-      background-size: 20px 20px;
-      background-position: 12px 50%;
-      background-color: #fff;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      bottom: 132px;
-      padding: 0px 16px 0px 40px;
-      font-family: Roboto Regular, Helvetica Neue, sans-serif;
-      font-size: 14px;
-      color:#4285f4;
-      height: 36px;
-      line-height: 36px;
-      border-radius: 18px;
-      border: 1px solid #DADCE0;
-    }
-
-    #ar-button:active {
-      background-color: #E8EAED;
-    }
-
-    #ar-button:focus {
-      outline: none;
-    }
-
-    #ar-button:focus-visible {
-      outline: 1px solid #4285f4;
-    }
-
-    model-viewer > #ar-failure {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 175px;
-      display: none;
-    }
-
-    model-viewer[ar-tracking="not-tracking"] > #ar-failure {
-      display: block;
-    }
+    /* Önceki CSS kodunuzu buraya ekleyin */
   </style>
 </body>
 </html>
