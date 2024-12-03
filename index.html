@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Model Viewer</title>
+  <title>Model Viewer AR</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <h1>3D Model in AR</h1>
-  
-  <!-- AR Model Viewer -->
+  <h1>AR Model in Viewer</h1>
+
   <model-viewer 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
@@ -18,18 +17,13 @@
     camera-controls 
     auto-rotate 
     style="width: 100%; height: 500px;">
-    <!-- AR Button -->
     <button slot="ar-button" id="ar-button">
       View in your space
     </button>
-    <!-- AR Failure Message -->
     <button id="ar-failure">
       AR is not tracking!
     </button>
   </model-viewer>
-
-  <!-- AR Activation Button -->
-  <button id="activate-ar" onclick="activateAR()">Activate AR</button>
 
   <style>
     model-viewer {
@@ -81,37 +75,6 @@
     model-viewer[ar-tracking="not-tracking"] > #ar-failure {
       display: block;
     }
-
-    #activate-ar {
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 50px;
-    }
-
-    #activate-ar:active {
-      background-color: #356ac6;
-    }
   </style>
-
-  <script>
-    function activateAR() {
-      const modelViewer = document.querySelector('model-viewer');
-      if (navigator.xr) {
-        modelViewer.setAttribute('ar', '');
-        modelViewer.setAttribute('ar-modes', 'webxr quick-look');
-        modelViewer.activateAR();
-      } else {
-        alert("WebXR AR desteği bulunamadı.");
-      }
-    }
-  </script>
 </body>
 </html>
