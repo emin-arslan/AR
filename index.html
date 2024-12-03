@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Viewer Test</title>
+  <title>Model Viewer AR</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <script type="module" src="https://unpkg.com/@google/model-viewer@2.6.1"></script>
+  <script>
+    window.addEventListener("load", () => {
+      var modelViewer = document.querySelector('model-viewer');
+      console.log("Can activate AR: " + modelViewer.canActivateAR);
+      modelViewer.activateAR();
+    });
+  </script>
 </head>
 <body>
-  <h1>3D Model in AR</h1>
+  <h1>AR Model in Viewer</h1>
   
   <model-viewer 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
