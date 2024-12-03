@@ -15,20 +15,21 @@
 
   <div id="ar-container" style="display:none;">
     <model-viewer 
-      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-      alt="Astronaut Model"
-      ar
-      ar-modes="webxr quick-look" 
-      camera-controls 
-      auto-rotate 
-      style="width: 100%; height: 500px;">
-      <button slot="ar-button" id="ar-button">
-        View in your space
-      </button>
-      <button id="ar-failure">
-        AR is not tracking!
-      </button>
-    </model-viewer>
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
+    alt="Astronaut Model"
+    ar 
+    ar-modes="webxr scene-viewer quick-look"  // Farklı AR modlarını ekleyin
+    camera-controls 
+    auto-rotate
+    ios-src="path/to/ios/model.usdz"  // iOS için USDZ formatı
+    style="width: 100%; height: 500px;">
+    <button slot="ar-button" id="ar-button">
+      View in your space
+    </button>
+    <button slot="ar-failure" style="display:block;">
+      AR tracking failed. Try different environment.
+    </button>
+</model-viewer>
   </div>
 
   <script>
