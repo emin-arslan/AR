@@ -3,91 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Viewer AR</title>
-  
-  <!-- Model Viewer'ı doğru şekilde dahil et -->
+  <title>QR AR Model Viewer</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
-  <h1>AR Model in Viewer</h1>
-  
-  <!-- Model-viewer bileşenini burada kullanıyoruz -->
   <model-viewer 
+    id="ar-model"
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
     ar
-    ar-modes="webxr quick-look" 
+    ar-modes="webxr scene-viewer quick-look" 
     camera-controls 
     auto-rotate 
     style="width: 100%; height: 500px;">
-    <button slot="ar-button" id="ar-button">
-      View in your space
-    </button>
-    <button id="ar-failure">
-      AR is not tracking!
-    </button>
+    <button slot="ar-button" id="ar-button">View in your space</button>
   </model-viewer>
 
-  <style>
-    model-viewer {
-      background-color: #eee;
-      overflow-x: hidden;
-    }
-
-    #ar-button {
-      background-image: url(../../assets/ic_view_in_ar_new_googblue_48dp.png);
-      background-repeat: no-repeat;
-      background-size: 20px 20px;
-      background-position: 12px 50%;
-      background-color: #fff;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      bottom: 132px;
-      padding: 0px 16px 0px 40px;
-      font-family: Roboto Regular, Helvetica Neue, sans-serif;
-      font-size: 14px;
-      color:#4285f4;
-      height: 36px;
-      line-height: 36px;
-      border-radius: 18px;
-      border: 1px solid #DADCE0;
-    }
-
-    #ar-button:active {
-      background-color: #E8EAED;
-    }
-
-    #ar-button:focus {
-      outline: none;
-    }
-
-    #ar-button:focus-visible {
-      outline: 1px solid #4285f4;
-    }
-
-    model-viewer > #ar-failure {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 175px;
-      display: none;
-    }
-
-    model-viewer[ar-tracking="not-tracking"] > #ar-failure {
-      display: block;
-    }
-  </style>
-
   <script>
-    // Sayfa yüklendiğinde AR'ye otomatik geçiş yapacak kod
-    document.addEventListener('DOMContentLoaded', function() {
-      const modelViewer = document.querySelector('model-viewer');
-      if (modelViewer) {
-        modelViewer.enterAR();
+    // QR parametresini kontrol eden fonksiyon
+    function checkQREntry() {
+      // URL'den 'qr' parametresini al
+      const urlParams = new URLSearchParams(window.location.search);
+      const isQREntry = urlParams.get('qr') === 'true';
+
+      if (isQREntry) {
+        const modelViewer = document.getElementById('ar-model');
+        
+        // AR butonuna tıklama işlemini simüle et
+        setTimeout(() => {
+          // Bazı model viewer'lar için farklı AR başlatma metodları
+          if (modelViewer.enterAR) {
+            modelViewer.enterAR();
+          } else {
+            const arButton = modelViewer.querySelector('[slot="ar-button"]');
+            if (arButton) {
+              arButton.click();
+            }
+          }
+        }, 1000); // Küçük bir gecikme ekledik
       }
-    });
+    }
+
+    // Sayfa yüklendiğinde QR kontrolünü yap
+    window.addEventListener('load', checkQREntry);
   </script>
 </body>
 </html>
