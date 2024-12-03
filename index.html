@@ -3,85 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Viewer AR</title>
+  <title>QR AR Model Viewer</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
-  <div id="qr-reader">
-    <video id="video" style="display:none;"></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-  </div>
-
-  <div id="ar-container" style="display:none;">
-    <model-viewer 
+  <model-viewer 
+    id="ar-model"
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
     alt="Astronaut Model"
-    ar 
-    ar-modes="webxr scene-viewer quick-look"  // Farklı AR modlarını ekleyin
+    ar
+    ar-modes="webxr scene-viewer quick-look" 
     camera-controls 
-    auto-rotate
-    ios-src="path/to/ios/model.usdz"  // iOS için USDZ formatı
+    auto-rotate 
     style="width: 100%; height: 500px;">
-    <button slot="ar-button" id="ar-button">
-      View in your space
-    </button>
-    <button slot="ar-failure" style="display:block;">
-      AR tracking failed. Try different environment.
-    </button>
-</model-viewer>
-  </div>
+    <button slot="ar-button" id="ar-button">View in your space</button>
+  </model-viewer>
 
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const qrReaderContainer = document.getElementById('qr-reader');
-    const arContainer = document.getElementById('ar-container');
+    // QR parametresini kontrol eden fonksiyon
+    function checkQREntry() {
+      // URL'den 'qr' parametresini al
+      const urlParams = new URLSearchParams(window.location.search);
+      const isQREntry = urlParams.get('qr') === 'true';
 
-    // QR Kod tarama fonksiyonu
-    function startQRScanner() {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(function(stream) {
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-          video.play();
-          requestAnimationFrame(tick);
-        });
-    }
-
-    function tick() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.height = video.videoHeight;
-        canvas.width = video.videoWidth;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        var imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-        var code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+      if (isQREntry) {
+        const modelViewer = document.getElementById('ar-model');
         
-        if (code) {
-          // QR kod başarıyla tarandığında
-          console.log("QR Code detected:", code.data);
-          if (code.data === window.location.href) {
-            // Eğer QR kod mevcut sayfanın URL'si ile eşleşiyorsa AR modunu aç
-            qrReaderContainer.style.display = 'none';
-            arContainer.style.display = 'block';
-            // Kamera akışını durdur
-            video.srcObject.getTracks().forEach(track => track.stop());
+        // AR butonuna tıklama işlemini simüle et
+        setTimeout(() => {
+          // Bazı model viewer'lar için farklı AR başlatma metodları
+          if (modelViewer.enterAR) {
+            modelViewer.enterAR();
+          } else {
+            const arButton = modelViewer.querySelector('[slot="ar-button"]');
+            if (arButton) {
+              arButton.click();
+            }
           }
-        }
+        }, 1000); // Küçük bir gecikme ekledik
       }
-      requestAnimationFrame(tick);
     }
 
-    // Sayfa yüklendiğinde QR tarayıcıyı başlat
-    window.onload = function() {
-      startQRScanner();
-    };
+    // Sayfa yüklendiğinde QR kontrolünü yap
+    window.addEventListener('load', checkQREntry);
   </script>
-
-  <style>
-    /* Önceki CSS kodunuzu buraya ekleyin */
-  </style>
 </body>
 </html>
