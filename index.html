@@ -4,76 +4,89 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR WebXR AR Viewer</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+  <style>
+    body { margin: 0; }
+    #ar-button {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div id="container"></div>
-  <button id="start-ar" style="display: none;">Start AR</button>
+  <button id="ar-button">Start AR</button>
 
-  <script>
-    // 1. Temel Three.js sahnesi
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+    import { ARButton } from 'https://unpkg.com/three@0.158.0/examples/jsm/webxr/ARButton.js';
+
+    // Scene setup
     const container = document.getElementById('container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true 
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // 2. Işık ekle
+    // Lighting
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     scene.add(light);
 
-    // 3. GLTFLoader ile Astronaut.glb modelini yükleme
-    const loader = new THREE.GLTFLoader();
+    // Model loading
+    const loader = new GLTFLoader();
+    let model;
     loader.load(
-      'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // Model URL'si
+      'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
       (gltf) => {
-        const model = gltf.scene;
-        model.position.set(0, 0, -1); // Kameranın önünde yerleştir
-        model.scale.set(0.5, 0.5, 0.5); // Modeli ölçeklendir
+        model = gltf.scene;
+        model.position.set(0, 0, -2); // Positioned further back
+        model.scale.set(0.5, 0.5, 0.5);
         scene.add(model);
       },
       undefined,
       (error) => {
-        console.error('Model yüklenirken hata oluştu:', error);
+        console.error('Model loading error:', error);
       }
     );
 
-    // 4. QR parametresini kontrol eden fonksiyon
-    function checkQREntry() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const isQREntry = urlParams.get('qr') === 'true';
+    // AR Button
+    document.body.appendChild(ARButton.createButton(renderer, {
+      optionalFeatures: ['local-floor', 'bounded-floor']
+    }));
 
-      if (isQREntry) {
-        // QR koddan giriş yapıldıysa WebXR oturumunu başlat
-        document.getElementById('start-ar').click();
-      }
-    }
-
-    // 5. WebXR oturumunu başlat
-    const arButton = document.getElementById('start-ar');
-    arButton.addEventListener('click', () => {
-      navigator.xr.requestSession('immersive-ar', {
-        optionalFeatures: ['local-floor', 'bounded-floor']
-      }).then((session) => {
-        renderer.xr.setSession(session);
-        animate();
-      }).catch((err) => {
-        console.error('WebXR oturumu başlatılamadı:', err);
-      });
-    });
-
-    // 6. Animasyon döngüsü
+    // Animation loop
     function animate() {
-      renderer.setAnimationLoop(() => {
-        renderer.render(scene, camera);
-      });
+      if (model) {
+        // Optional: Add some simple animation
+        model.rotation.y += 0.01;
+      }
+      renderer.render(scene, camera);
     }
 
-    // Sayfa yüklendiğinde QR kontrolünü yap
-    window.addEventListener('load', checkQREntry);
+    // Start XR
+    renderer.setAnimationLoop(animate);
+
+    // Responsive handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 </body>
 </html>
