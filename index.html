@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A-Frame GLTF and BIN Viewer</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; }
-  </style>
+  <title>GLTF Model Viewer</title>
+  <!-- ModelViewer kütüphanesini yükleyin -->
+  <script src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.1.0/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <a-scene>
-    <!-- Load GLTF model (ensure both .gltf and .bin are in the same directory) -->
-    <a-entity gltf-model="./output.gltf" scale="0.5 0.5 0.5" position="0 1 -3"></a-entity>
-    <a-camera></a-camera>
-  </a-scene>
+  <h1>GLTF Model Viewer</h1>
+
+  <!-- GLTF Modelinizi buraya ekleyin -->
+  <model-viewer 
+    src="./output.gltf" 
+    alt="A 3D model" 
+    auto-rotate 
+    camera-controls 
+    ar 
+    style="width: 100%; height: 500px;">
+  </model-viewer>
+
 </body>
 </html>
