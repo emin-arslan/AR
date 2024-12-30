@@ -3,37 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebXR AR Viewer</title>
+  <title>GLTF Viewer</title>
   <style>
     body { 
       margin: 0; 
       font-family: Arial, sans-serif; 
       background: #f0f0f0;
     }
-    #ar-button {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #info {
-      position: absolute;
-      top: 10px;
+    #container {
       width: 100%;
-      text-align: center;
-      color: #333;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
     }
   </style>
 </head>
 <body>
-  <div id="info">WebXR AR Viewer</div>
   <div id="container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -44,7 +31,7 @@
     const container = document.getElementById('container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-    camera.position.z = 1;
+    camera.position.z = 3;
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
@@ -54,22 +41,33 @@
     container.appendChild(renderer.domElement);
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(0, 10, 0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 10, 10);
     scene.add(directionalLight);
 
-    // Attempt to load model
+    // Load the GLTF model
     const loader = new THREE.GLTFLoader();
     loader.load(
       './output.gltf', // GLTF file location (same directory as index.html)
       (gltf) => {
         const model = gltf.scene;
-        model.position.set(0, 0, -2);
-        model.scale.set(0.5, 0.5, 0.5);
         scene.add(model);
+
+        // Animation or rotation of the model
+        function animate() {
+          requestAnimationFrame(animate);
+          
+          // Rotate the model
+          model.rotation.x += 0.01;
+          model.rotation.y += 0.01;
+          
+          renderer.render(scene, camera);
+        }
+
+        animate();
       },
       undefined,
       (error) => {
@@ -77,51 +75,12 @@
       }
     );
 
-    // Animation
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-
-    // Responsive design
+    // Adjust for window resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    // WebXR setup
-    function setupWebXR() {
-      // Check WebXR support
-      if ('xr' in navigator) {
-        const arButton = document.createElement('button');
-        arButton.textContent = 'Start AR';
-        arButton.id = 'ar-button';
-        document.body.appendChild(arButton);
-
-        arButton.addEventListener('click', () => {
-          navigator.xr.requestSession('immersive-ar', {
-            requiredFeatures: ['local-floor']
-          }).then((session) => {
-            renderer.xr.enabled = true;
-            renderer.xr.setSession(session);
-            
-            // Start XR render loop
-            renderer.setAnimationLoop(() => {
-              renderer.render(scene, camera);
-            });
-          }).catch((error) => {
-            console.error('AR session failed:', error);
-          });
-        });
-      } else {
-        console.warn('WebXR not supported');
-      }
-    }
-
-    // Initialize
-    animate();
-    setupWebXR();
   </script>
 </body>
 </html>
