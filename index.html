@@ -3,83 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GLTF Viewer</title>
+  <title>Babylon.js GLTF Viewer</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <style>
-    body { 
-      margin: 0; 
-      font-family: Arial, sans-serif; 
-      background: #f0f0f0;
-    }
-    #container {
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #000;
-    }
+    body { margin: 0; overflow: hidden; }
+    canvas { width: 100%; height: 100% }
   </style>
 </head>
 <body>
-  <div id="container"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/GLTFLoader.js"></script>
+  <canvas id="renderCanvas"></canvas>
 
   <script>
-    // Scene setup
-    const container = document.getElementById('container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-    camera.position.z = 3;
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
 
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true, 
-      alpha: true 
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    container.appendChild(renderer.domElement);
+    const scene = new BABYLON.Scene(engine);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-    scene.add(ambientLight);
+    // Create a camera
+    const camera = new BABYLON.ArcRotateCamera("camera1", Math.PI / 2, Math.PI / 2, 10, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(0, 10, 10);
-    scene.add(directionalLight);
+    // Add a light
+    const light = new BABYLON.HemisphericLight("light1", BABYLON.Vector3.Up(), scene);
 
     // Load the GLTF model
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-      './output.gltf', // GLTF file location (same directory as index.html)
-      (gltf) => {
-        const model = gltf.scene;
-        scene.add(model);
+    BABYLON.SceneLoader.Append("./", "output.gltf", scene, function (scene) {
+      // Model loaded
+      scene.createDefaultCameraOrLight(true, true, true);
+    });
 
-        // Animation or rotation of the model
-        function animate() {
-          requestAnimationFrame(animate);
-          
-          // Rotate the model
-          model.rotation.x += 0.01;
-          model.rotation.y += 0.01;
-          
-          renderer.render(scene, camera);
-        }
+    engine.runRenderLoop(function () {
+      scene.render();
+    });
 
-        animate();
-      },
-      undefined,
-      (error) => {
-        console.error('Model loading error:', error);
-      }
-    );
-
-    // Adjust for window resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    window.addEventListener("resize", function () {
+      engine.resize();
     });
   </script>
 </body>
