@@ -37,19 +37,9 @@
   <div id="container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/loaders/GLTFLoader.js"></script>
 
   <script>
-    // Manually define GLTFLoader since it's not automatically included
-    THREE.GLTFLoader = function() {
-      this.load = function(url, onLoad, onProgress, onError) {
-        const loader = new THREE.ObjectLoader();
-        loader.load(url, (obj) => {
-          const model = obj;
-          if (onLoad) onLoad({ scene: model });
-        }, onProgress, onError);
-      };
-    };
-
     // Scene setup
     const container = document.getElementById('container');
     const scene = new THREE.Scene();
@@ -71,17 +61,10 @@
     directionalLight.position.set(0, 10, 0);
     scene.add(directionalLight);
 
-    // Create a simple cube as a placeholder
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 0, -2);
-    scene.add(cube);
-
-    // Attempt to load model (may not work with this method)
+    // Attempt to load model
     const loader = new THREE.GLTFLoader();
     loader.load(
-      './output.gltf',
+      './output.gltf', // GLTF file location (same directory as index.html)
       (gltf) => {
         const model = gltf.scene;
         model.position.set(0, 0, -2);
@@ -97,11 +80,6 @@
     // Animation
     function animate() {
       requestAnimationFrame(animate);
-      
-      // Rotate the cube
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      
       renderer.render(scene, camera);
     }
 
