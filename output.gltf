@@ -1,0 +1,162 @@
+{
+    "asset": {
+        "version": "2.0",
+        "generator": "svf-utils",
+        "copyright": "2024 (c) Autodesk"
+    },
+    "extensionsUsed": [
+        "KHR_texture_transform"
+    ],
+    "buffers": [
+        {
+            "uri": "0.bin",
+            "byteLength": 25688
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteOffset": 0,
+            "byteLength": 5112
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 5112,
+            "byteLength": 7716
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 12828,
+            "byteLength": 7716
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 20544,
+            "byteLength": 5144
+        }
+    ],
+    "accessors": [
+        {
+            "bufferView": 0,
+            "componentType": 5123,
+            "count": 2556,
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 643,
+            "type": "VEC3",
+            "min": [
+                -0.8200049996376038,
+                -0.4749999940395355,
+                -0.4729737341403961
+            ],
+            "max": [
+                0.8200049996376038,
+                0.4749999940395355,
+                0.4729737341403961
+            ]
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 643,
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "componentType": 5126,
+            "count": 643,
+            "type": "VEC2"
+        }
+    ],
+    "meshes": [
+        {
+            "primitives": [
+                {
+                    "mode": 4,
+                    "attributes": {
+                        "POSITION": 1,
+                        "NORMAL": 2,
+                        "TEXCOORD_0": 3
+                    },
+                    "indices": 0,
+                    "material": 0
+                }
+            ]
+        }
+    ],
+    "materials": [
+        {
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.596,
+                    0.5896,
+                    0.5832,
+                    1
+                ],
+                "metallicFactor": 1,
+                "roughnessFactor": 0.46875
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "children": [
+                1
+            ],
+            "matrix": [
+                -0.001,
+                0,
+                0,
+                0,
+                0,
+                0.001,
+                0,
+                0,
+                0,
+                0,
+                -0.001,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "children": [
+                2
+            ]
+        },
+        {
+            "name": "3",
+            "scale": [
+                10,
+                10,
+                10
+            ],
+            "rotation": [
+                0,
+                0,
+                0,
+                1
+            ],
+            "translation": [
+                7.100050000000002,
+                -1.1102230246251565e-15,
+                0
+            ],
+            "mesh": 0
+        }
+    ],
+    "scenes": [
+        {
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "scene": 0
+}

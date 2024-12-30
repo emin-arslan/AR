@@ -81,7 +81,7 @@
     // Attempt to load model (may not work with this method)
     const loader = new THREE.GLTFLoader();
     loader.load(
-      'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+      './output.gltf',
       (gltf) => {
         const model = gltf.scene;
         model.position.set(0, 0, -2);
