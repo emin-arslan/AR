@@ -10,13 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^9.120.5",
-    "@react-three/fiber": "^8.17.10",
-    "@react-three/xr": "^6.4.12",
+    "@babylonjs/core": "^7.42.0",
+    "@babylonjs/inspector": "^7.42.0",
+    "@babylonjs/loaders": "^7.42.0",
     "@types/three": "^0.171.0",
+    "aframe": "^1.6.0",
+    "aframe-ar": "^0.2.1-a",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.172.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
