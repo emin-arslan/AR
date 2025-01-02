@@ -19,7 +19,7 @@
       scene.add(light);
 
       const loader = new GLTFLoader();
-      loader.load('output.gltf', (gltf) => {
+      loader.load('./output.gltf', (gltf) => {
         scene.add(gltf.scene);
         camera.position.z = 5;
         renderer.render(scene, camera);
