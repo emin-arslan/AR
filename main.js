@@ -92,7 +92,26 @@ class ModelViewer {
             const loader = new GLTFLoader();
             loader.setDRACOLoader(dracoLoader);
 
-            const gltf = await loader.loadAsync('./output.gltf');
+            // Hata ayıklama için log ekleyelim
+            console.log('Model yükleme başladı');
+            
+            const gltf = await new Promise((resolve, reject) => {
+                loader.load(
+                    'output.gltf',
+                    (gltf) => {
+                        console.log('Model başarıyla yüklendi');
+                        resolve(gltf);
+                    },
+                    (progress) => {
+                        console.log('Yükleme ilerlemesi:', (progress.loaded / progress.total * 100) + '%');
+                    },
+                    (error) => {
+                        console.error('Model yükleme hatası:', error);
+                        reject(error);
+                    }
+                );
+            });
+
             this.model = gltf.scene;
 
             // Model yüklendikten sonra boyutunu ve pozisyonunu ayarla
@@ -122,7 +141,7 @@ class ModelViewer {
 
         } catch (error) {
             console.error('Model yüklenirken hata:', error);
-            this.showErrorMessage();
+            this.showErrorMessage(`Hata: ${error.message}`);
         }
     }
 
@@ -167,10 +186,11 @@ class ModelViewer {
         this.loadingScreen.style.display = 'none';
     }
 
-    showErrorMessage() {
+    showErrorMessage(message) {
         this.loadingScreen.innerHTML = `
             <div class="loading-text" style="color: red;">
-                Error loading model. Please try again.
+                ${message}<br>
+                <small style="font-size: 14px;">Lütfen konsolu kontrol edin (F12)</small>
             </div>
         `;
     }
