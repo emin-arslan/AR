@@ -11,6 +11,77 @@ function App() {
   const sceneRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isARSupported, setIsARSupported] = useState(false);
+  const [isInAR, setIsInAR] = useState(false);
+
+  // AR desteğini kontrol et
+  useEffect(() => {
+    const checkARSupport = async () => {
+      try {
+        if ('xr' in navigator) {
+          const supported = await navigator.xr.isSessionSupported('immersive-ar');
+          setIsARSupported(supported);
+        } else {
+          setIsARSupported(false);
+        }
+      } catch (error) {
+        console.error('AR kontrol hatası:', error);
+        setIsARSupported(false);
+      }
+    };
+
+    checkARSupport();
+  }, []);
+
+  // AR moduna geç
+  const startARSession = async () => {
+    if (!engineRef.current || !sceneRef.current) return;
+
+    try {
+      const xrHelper = await sceneRef.current.createDefaultXRExperienceAsync({
+        uiOptions: {
+          sessionMode: 'immersive-ar',
+          referenceSpaceType: 'local-floor'
+        },
+        optionalFeatures: true
+      });
+
+      if (xrHelper.baseExperience) {
+        // AR session başladığında
+        xrHelper.baseExperience.onStateChangedObservable.add((state) => {
+          if (state === BABYLON.WebXRState.IN_XR) {
+            setIsInAR(true);
+            console.log('AR modu başladı');
+          } else if (state === BABYLON.WebXRState.NOT_IN_XR) {
+            setIsInAR(false);
+            console.log('AR modu sonlandı');
+          }
+        });
+
+        // Hit test özelliğini ekle
+        const featuresManager = xrHelper.baseExperience.featuresManager;
+        const hitTest = featuresManager.enableFeature(BABYLON.WebXRFeatureName.HIT_TEST, 'latest');
+
+        if (hitTest) {
+          hitTest.onHitTestResultObservable.add((results) => {
+            if (results.length > 0) {
+              // Hit test sonucunu kullan
+              const hitResult = results[0];
+              // Model pozisyonunu güncelle
+              if (sceneRef.current.getTransformNodeByName("root")) {
+                const rootNode = sceneRef.current.getTransformNodeByName("root");
+                rootNode.position = hitResult.position;
+                rootNode.rotationQuaternion = hitResult.rotationQuaternion;
+              }
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('AR başlatma hatası:', error);
+      setError('AR modu başlatılamadı: ' + error.message);
+    }
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -47,6 +118,7 @@ function App() {
       height: 10
     }, scene);
     ground.position.y = -1;
+    ground.visibility = isInAR ? 0 : 1; // AR modunda ground'u gizle
 
     // GLTF modelini yükle
     BABYLON.SceneLoader.LoadAssetContainer(
@@ -70,9 +142,11 @@ function App() {
           rootNode.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
           rootNode.position = new BABYLON.Vector3(0, 0, 0);
           
-          // Animasyon
+          // Animasyon (sadece AR modunda değilken)
           scene.registerBeforeRender(() => {
-            rootNode.rotation.y += 0.01;
+            if (!isInAR && rootNode) {
+              rootNode.rotation.y += 0.01;
+            }
           });
 
           setIsLoading(false);
@@ -124,7 +198,7 @@ function App() {
         engineRef.current.dispose();
       }
     };
-  }, []);
+  }, [isInAR]); // isInAR değiştiğinde effect'i yeniden çalıştır
 
   return (
     <div className="app-container">
@@ -147,6 +221,16 @@ function App() {
           <div className="version-badge">v{APP_VERSION}</div>
         </div>
       </div>
+
+      <button 
+        className={`ar-button ${!isARSupported ? 'disabled' : ''} ${isInAR ? 'active' : ''}`}
+        onClick={startARSession}
+        disabled={!isARSupported}
+      >
+        <span className="ar-icon">📱</span>
+        {isInAR ? 'AR Modundan Çık' : 'AR Moduna Geç'}
+        {!isARSupported && <span className="ar-not-supported">AR Desteklenmiyor</span>}
+      </button>
 
       <canvas ref={canvasRef} className="babylon-canvas" />
     </div>
