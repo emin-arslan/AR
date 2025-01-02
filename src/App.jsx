@@ -125,40 +125,111 @@ function App() {
   const [isAR, setIsAR] = useState(false);
   const [arSupported, setARSupported] = useState(false);
   const canvasRef = useRef();
+  const sessionRef = useRef(null);
 
   useEffect(() => {
-    // AR desteğini kontrol et
-    if ('xr' in navigator) {
-      navigator.xr.isSessionSupported('immersive-ar')
-        .then((supported) => {
-          setARSupported(supported);
-        })
-        .catch(() => setARSupported(false));
-    }
-
+    checkARSupport();
     setTimeout(() => setIsLoading(false), 3000);
   }, []);
 
+  const checkARSupport = async () => {
+    // iOS için Quick Look AR desteğini kontrol et
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      setARSupported(true);
+      return;
+    }
+
+    // Android ve diğer cihazlar için WebXR desteğini kontrol et
+    if ('xr' in navigator) {
+      try {
+        const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
+        setARSupported(isSupported);
+      } catch (error) {
+        console.error('AR destek kontrolü başarısız:', error);
+        setARSupported(false);
+      }
+    }
+  };
+
   const startAR = async () => {
+    // iOS için Quick Look AR'ı başlat
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      // USDZ veya REALITY dosyasını aç
+      window.location.href = 'output.usdz';
+      return;
+    }
+
+    // Android ve diğer cihazlar için WebXR'ı başlat
     if (!canvasRef.current) return;
 
     try {
+      if (sessionRef.current) {
+        await sessionRef.current.end();
+        sessionRef.current = null;
+        setIsAR(false);
+        return;
+      }
+
       const session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
+        optionalFeatures: ['dom-overlay', 'hit-test'],
         domOverlay: { root: document.body }
       });
 
+      sessionRef.current = session;
+
       const gl = canvasRef.current.getContext('webgl', {
-        xrCompatible: true
+        xrCompatible: true,
+        antialias: true,
+        alpha: true
       });
 
       await gl.makeXRCompatible();
+
+      session.addEventListener('end', () => {
+        sessionRef.current = null;
+        setIsAR(false);
+      });
+
+      const xrSystem = await navigator.xr;
+      const referenceSpace = await session.requestReferenceSpace('local');
+      const viewerSpace = await session.requestReferenceSpace('viewer');
+
+      session.updateRenderState({
+        baseLayer: new XRWebGLLayer(session, gl)
+      });
+
       setIsAR(true);
+
+      // AR session başlatıldığında animasyon döngüsünü başlat
+      const onXRFrame = (time, frame) => {
+        if (!sessionRef.current) return;
+
+        session.requestAnimationFrame(onXRFrame);
+        const pose = frame.getViewerPose(referenceSpace);
+
+        if (pose) {
+          const view = pose.views[0];
+          const viewport = session.renderState.baseLayer.getViewport(view);
+          gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+        }
+      };
+
+      session.requestAnimationFrame(onXRFrame);
     } catch (error) {
       console.error('AR başlatılamadı:', error);
+      alert('AR başlatılırken bir hata oluştu. Lütfen tarayıcınızın ve cihazınızın AR desteklediğinden emin olun.');
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (sessionRef.current) {
+        sessionRef.current.end().catch(console.error);
+      }
+    };
+  }, []);
 
   return (
     <div className="app-container">
@@ -184,8 +255,12 @@ function App() {
         >
           <Scene isAR={isAR} />
         </Canvas>
-        <button onClick={startAR} className="ar-floating-button" title="AR'da Görüntüle">
-          <span className="ar-icon">📱</span>
+        <button 
+          onClick={startAR} 
+          className={`ar-floating-button ${isAR ? 'active' : ''}`} 
+          title={isAR ? "AR'dan Çık" : "AR'da Görüntüle"}
+        >
+          <span className="ar-icon">{isAR ? '✕' : '📱'}</span>
         </button>
       </div>
       <div className="controls controls-mobile">

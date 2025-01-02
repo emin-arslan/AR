@@ -434,3 +434,15 @@
     font-size: 1.3rem;
   }
 }
+
+.ar-floating-button.active {
+  background: #ef4444;
+}
+
+.ar-floating-button.active:hover {
+  background: #dc2626;
+}
+
+.ar-floating-button.active .ar-icon {
+  transform: rotate(45deg);
+}
