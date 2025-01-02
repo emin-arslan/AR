@@ -121,61 +121,24 @@ function Scene({ isAR }) {
   );
 }
 
-function ARPrompt({ onAccept, onDecline }) {
+function CustomARButton({ onClick }) {
   return (
-    <div className="ar-prompt">
-      <div className="ar-prompt-content">
-        <h2>AR Görüntüleme</h2>
-        <p>Bu modeli AR ortamında görüntülemek ister misiniz?</p>
-        <div className="ar-prompt-buttons">
-          <button onClick={onAccept} className="ar-prompt-button accept">
-            Evet, AR'da Görüntüle
-          </button>
-          <button onClick={onDecline} className="ar-prompt-button decline">
-            Hayır, Normal Görüntüle
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ARModeButton({ isSupported, onClick }) {
-  return (
-    <button 
-      onClick={isSupported ? onClick : undefined} 
-      className={`ar-mode-button ${!isSupported ? 'disabled' : ''}`}
-      title={!isSupported ? 'Bu cihaz AR desteklemiyor' : 'AR modunda görüntüle'}
-    >
+    <button onClick={onClick} className="ar-floating-button" title="AR'da Görüntüle">
       <span className="ar-icon">📱</span>
-      {isSupported ? 'AR\'da Görüntüle' : 'AR Desteklenmiyor'}
-      {!isSupported && <span className="ar-not-supported-badge">!</span>}
     </button>
   );
 }
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isARSupported, setIsARSupported] = useState(false);
   const [isAR, setIsAR] = useState(false);
 
   useEffect(() => {
-    // AR desteğini kontrol et
-    if ('xr' in navigator) {
-      navigator.xr.isSessionSupported('immersive-ar')
-        .then(supported => {
-          setIsARSupported(supported);
-        })
-        .catch(() => setIsARSupported(false));
-    }
-
     setTimeout(() => setIsLoading(false), 3000);
   }, []);
 
   const switchToAR = () => {
-    if (isARSupported) {
-      setIsAR(true);
-    }
+    setIsAR(true);
   };
 
   return (
@@ -207,6 +170,7 @@ function App() {
           )}
         </Canvas>
       </div>
+      {!isAR && <CustomARButton onClick={switchToAR} />}
       {!isAR && (
         <div className="controls controls-mobile">
           <div className="controls-header">
@@ -229,9 +193,6 @@ function App() {
                 </li>
               </ul>
             </div>
-          </div>
-          <div className="ar-controls">
-            <ARModeButton isSupported={isARSupported} onClick={switchToAR} />
           </div>
         </div>
       )}
