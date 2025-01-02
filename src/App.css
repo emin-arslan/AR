@@ -14,59 +14,39 @@
   overflow: hidden;
 }
 
-.top-controls {
+.loading-screen {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  background: rgba(15, 23, 42, 0.8);
-  padding: 1rem;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 100;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.version-badge {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-left: 1rem;
-  display: inline-flex;
+  justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
 
-.controls-header {
-  display: flex;
-  align-items: center;
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #fff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  margin-bottom: 1rem;
 }
 
-.controls-header h1 {
-  font-size: 1.2rem;
-  margin: 0;
-}
-
-.feature-list ul {
-  list-style: none;
-  display: flex;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-}
-
-.feature-list li {
-  display: flex;
-  align-items: center;
-  color: #cbd5e1;
-  font-size: 0.9rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .canvas-container {
@@ -465,21 +445,4 @@
 
 .ar-floating-button.active .ar-icon {
   transform: rotate(45deg);
-}
-
-.ar-error {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.ar-error .icon {
-  font-size: 1.2rem;
-  margin: 0;
 }
