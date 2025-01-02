@@ -1,20 +1,7 @@
 {
-  "name": "babylon-viewer",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "vercel-build": "vite build"
-  },
-  "devDependencies": {
-    "vite": "^5.0.0"
-  },
+  "name": "3d-model-viewer",
+  "version": "1.0.0",
   "dependencies": {
-    "@babylonjs/core": "^6.37.1",
-    "@babylonjs/loaders": "^6.37.1",
-    "three": "^0.172.0"
+    "three": "^0.162.0"
   }
 }
