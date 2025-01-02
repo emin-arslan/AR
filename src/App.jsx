@@ -1,6 +1,7 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, Stars, useAnimations, Center } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, Stars, useAnimations } from '@react-three/drei';
+import { ARButton, XR } from '@react-three/xr';
 import * as THREE from 'three';
 import './App.css';
 
@@ -86,7 +87,7 @@ function Particles() {
   );
 }
 
-function Scene() {
+function Scene({ isAR }) {
   return (
     <>
       <Environment preset="sunset" />
@@ -96,12 +97,16 @@ function Scene() {
       <Suspense fallback={null}>
         <Model />
       </Suspense>
-      <Particles />
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#1e293b" transparent opacity={0.3} wireframe />
-      </mesh>
+      {!isAR && (
+        <>
+          <Particles />
+          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+            <planeGeometry args={[20, 20]} />
+            <meshStandardMaterial color="#1e293b" transparent opacity={0.3} wireframe />
+          </mesh>
+        </>
+      )}
       <OrbitControls 
         enablePan={true}
         enableZoom={true}
@@ -116,12 +121,62 @@ function Scene() {
   );
 }
 
+function ARPrompt({ onAccept, onDecline }) {
+  return (
+    <div className="ar-prompt">
+      <div className="ar-prompt-content">
+        <h2>AR Görüntüleme</h2>
+        <p>Bu modeli AR ortamında görüntülemek ister misiniz?</p>
+        <div className="ar-prompt-buttons">
+          <button onClick={onAccept} className="ar-prompt-button accept">
+            Evet, AR'da Görüntüle
+          </button>
+          <button onClick={onDecline} className="ar-prompt-button decline">
+            Hayır, Normal Görüntüle
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ARModeButton({ isSupported, onClick }) {
+  return (
+    <button 
+      onClick={isSupported ? onClick : undefined} 
+      className={`ar-mode-button ${!isSupported ? 'disabled' : ''}`}
+      title={!isSupported ? 'Bu cihaz AR desteklemiyor' : 'AR modunda görüntüle'}
+    >
+      <span className="ar-icon">📱</span>
+      {isSupported ? 'AR\'da Görüntüle' : 'AR Desteklenmiyor'}
+      {!isSupported && <span className="ar-not-supported-badge">!</span>}
+    </button>
+  );
+}
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isARSupported, setIsARSupported] = useState(false);
+  const [isAR, setIsAR] = useState(false);
 
   useEffect(() => {
+    // AR desteğini kontrol et
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then(supported => {
+          setIsARSupported(supported);
+        })
+        .catch(() => setIsARSupported(false));
+    }
+
     setTimeout(() => setIsLoading(false), 3000);
   }, []);
+
+  const switchToAR = () => {
+    if (isARSupported) {
+      setIsAR(true);
+    }
+  };
 
   return (
     <div className="app-container">
@@ -143,32 +198,43 @@ function App() {
           dpr={[1, 2]}
           shadows
         >
-          <Scene />
+          {isAR ? (
+            <XR>
+              <Scene isAR={true} />
+            </XR>
+          ) : (
+            <Scene isAR={false} />
+          )}
         </Canvas>
       </div>
-      <div className="controls controls-mobile">
-        <div className="controls-header">
-          <h1>3D Viewer</h1>
-        </div>
-        <div className="controls-content">
-          <div className="feature-list">
-            <ul>
-              <li>
-                <span className="icon">🔄</span>
-                Rotate
-              </li>
-              <li>
-                <span className="icon">🔍</span>
-                Zoom
-              </li>
-              <li>
-                <span className="icon">✋</span>
-                Pan
-              </li>
-            </ul>
+      {!isAR && (
+        <div className="controls controls-mobile">
+          <div className="controls-header">
+            <h1>3D Viewer</h1>
+          </div>
+          <div className="controls-content">
+            <div className="feature-list">
+              <ul>
+                <li>
+                  <span className="icon">🔄</span>
+                  Rotate
+                </li>
+                <li>
+                  <span className="icon">🔍</span>
+                  Zoom
+                </li>
+                <li>
+                  <span className="icon">✋</span>
+                  Pan
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="ar-controls">
+            <ARModeButton isSupported={isARSupported} onClick={switchToAR} />
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
