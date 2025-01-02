@@ -1,7 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, Stars, useAnimations } from '@react-three/drei';
-import { ARButton, XR } from '@react-three/xr';
 import * as THREE from 'three';
 import './App.css';
 
@@ -121,24 +120,44 @@ function Scene({ isAR }) {
   );
 }
 
-function CustomARButton({ onClick }) {
-  return (
-    <button onClick={onClick} className="ar-floating-button" title="AR'da Görüntüle">
-      <span className="ar-icon">📱</span>
-    </button>
-  );
-}
-
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAR, setIsAR] = useState(false);
+  const [arSupported, setARSupported] = useState(false);
+  const canvasRef = useRef();
 
   useEffect(() => {
+    // AR desteğini kontrol et
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then((supported) => {
+          setARSupported(supported);
+        })
+        .catch(() => setARSupported(false));
+    }
+
     setTimeout(() => setIsLoading(false), 3000);
   }, []);
 
-  const switchToAR = () => {
-    setIsAR(true);
+  const startAR = async () => {
+    if (!canvasRef.current) return;
+
+    try {
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: document.body }
+      });
+
+      const gl = canvasRef.current.getContext('webgl', {
+        xrCompatible: true
+      });
+
+      await gl.makeXRCompatible();
+      setIsAR(true);
+    } catch (error) {
+      console.error('AR başlatılamadı:', error);
+    }
   };
 
   return (
@@ -151,51 +170,52 @@ function App() {
       )}
       <div className="canvas-container">
         <Canvas 
+          ref={canvasRef}
           camera={{ position: [0, 1, 5], fov: 45 }}
           gl={{ 
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
+            xrCompatible: true
           }}
           dpr={[1, 2]}
           shadows
         >
-          {isAR ? (
-            <XR>
-              <Scene isAR={true} />
-            </XR>
-          ) : (
-            <Scene isAR={false} />
-          )}
+          <Scene isAR={isAR} />
         </Canvas>
+        <button onClick={startAR} className="ar-floating-button" title="AR'da Görüntüle">
+          <span className="ar-icon">📱</span>
+        </button>
       </div>
-      {!isAR && <CustomARButton onClick={switchToAR} />}
-      {!isAR && (
-        <div className="controls controls-mobile">
-          <div className="controls-header">
-            <h1>3D Viewer</h1>
-          </div>
-          <div className="controls-content">
-            <div className="feature-list">
-              <ul>
-                <li>
-                  <span className="icon">🔄</span>
-                  Rotate
-                </li>
-                <li>
-                  <span className="icon">🔍</span>
-                  Zoom
-                </li>
-                <li>
-                  <span className="icon">✋</span>
-                  Pan
-                </li>
-              </ul>
-            </div>
+      <div className="controls controls-mobile">
+        <div className="controls-header">
+          <h1>3D Viewer</h1>
+          <span className="ar-badge">AR Ready</span>
+        </div>
+        <div className="controls-content">
+          <div className="feature-list">
+            <ul>
+              <li>
+                <span className="icon">🔄</span>
+                Rotate
+              </li>
+              <li>
+                <span className="icon">🔍</span>
+                Zoom
+              </li>
+              <li>
+                <span className="icon">✋</span>
+                Pan
+              </li>
+              <li>
+                <span className="icon">📱</span>
+                AR Available
+              </li>
+            </ul>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
