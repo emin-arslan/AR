@@ -92,7 +92,7 @@ class ModelViewer {
             const loader = new GLTFLoader();
             loader.setDRACOLoader(dracoLoader);
 
-            const gltf = await loader.loadAsync('output.gltf');
+            const gltf = await loader.loadAsync('./output.gltf');
             this.model = gltf.scene;
 
             // Model yüklendikten sonra boyutunu ve pozisyonunu ayarla
