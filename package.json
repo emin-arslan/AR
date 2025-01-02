@@ -1,29 +1,32 @@
 {
-  "name": "gltf-viewer",
-  "version": "0.1.0",
+  "name": "ar",
   "private": true,
-  "dependencies": {
-    "@react-three/drei": "9.80.0",
-    "@react-three/fiber": "8.13.3",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-scripts": "^5.0.1",
-    "three": "0.154.0"
-  },
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build"
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@babylonjs/core": "^7.42.0",
+    "@babylonjs/loaders": "^7.42.0",
+    "@types/three": "^0.171.0",
+    "react": "^18.3.1",
+    "react-babylonjs": "^3.2.2",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "vite": "^6.0.5"
   }
 }
