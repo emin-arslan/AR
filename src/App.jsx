@@ -9,6 +9,7 @@ function App() {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const sceneRef = useRef(null);
+  const xrHelperRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isARSupported, setIsARSupported] = useState(false);
@@ -18,10 +19,17 @@ function App() {
   useEffect(() => {
     const checkARSupport = async () => {
       try {
+        // WebXR API kontrolü
         if ('xr' in navigator) {
-          const supported = await navigator.xr.isSessionSupported('immersive-ar');
+          // AR session desteğini kontrol et
+          const supported = await Promise.any([
+            navigator.xr.isSessionSupported('immersive-ar'),
+            navigator.xr.isSessionSupported('ar'),
+          ]);
+          console.log('AR desteği:', supported);
           setIsARSupported(supported);
         } else {
+          console.log('WebXR API bulunamadı');
           setIsARSupported(false);
         }
       } catch (error) {
@@ -38,17 +46,18 @@ function App() {
     if (!engineRef.current || !sceneRef.current) return;
 
     try {
-      const xrHelper = await sceneRef.current.createDefaultXRExperienceAsync({
-        uiOptions: {
-          sessionMode: 'immersive-ar',
-          referenceSpaceType: 'local-floor'
-        },
-        optionalFeatures: true
-      });
+      if (!xrHelperRef.current) {
+        // XR Helper'ı oluştur
+        xrHelperRef.current = await sceneRef.current.createDefaultXRExperienceAsync({
+          uiOptions: {
+            sessionMode: "immersive-ar",
+            referenceSpaceType: "local-floor",
+          },
+          optionalFeatures: true,
+        });
 
-      if (xrHelper.baseExperience) {
         // AR session başladığında
-        xrHelper.baseExperience.onStateChangedObservable.add((state) => {
+        xrHelperRef.current.baseExperience.onStateChangedObservable.add((state) => {
           if (state === BABYLON.WebXRState.IN_XR) {
             setIsInAR(true);
             console.log('AR modu başladı');
@@ -59,27 +68,44 @@ function App() {
         });
 
         // Hit test özelliğini ekle
-        const featuresManager = xrHelper.baseExperience.featuresManager;
-        const hitTest = featuresManager.enableFeature(BABYLON.WebXRFeatureName.HIT_TEST, 'latest');
-
-        if (hitTest) {
-          hitTest.onHitTestResultObservable.add((results) => {
-            if (results.length > 0) {
-              // Hit test sonucunu kullan
-              const hitResult = results[0];
-              // Model pozisyonunu güncelle
-              if (sceneRef.current.getTransformNodeByName("root")) {
-                const rootNode = sceneRef.current.getTransformNodeByName("root");
-                rootNode.position = hitResult.position;
-                rootNode.rotationQuaternion = hitResult.rotationQuaternion;
+        const featuresManager = xrHelperRef.current.baseExperience.featuresManager;
+        
+        try {
+          const hitTest = featuresManager.enableFeature(BABYLON.WebXRFeatureName.HIT_TEST, 'latest');
+          
+          if (hitTest) {
+            hitTest.onHitTestResultObservable.add((results) => {
+              if (results.length > 0) {
+                const hitResult = results[0];
+                if (sceneRef.current.getTransformNodeByName("root")) {
+                  const rootNode = sceneRef.current.getTransformNodeByName("root");
+                  rootNode.position = hitResult.position;
+                  rootNode.rotationQuaternion = hitResult.rotationQuaternion;
+                }
               }
-            }
-          });
+            });
+          }
+        } catch (hitTestError) {
+          console.warn('Hit test özelliği etkinleştirilemedi:', hitTestError);
         }
       }
+
+      // AR session'ı başlat
+      await xrHelperRef.current.baseExperience.enterXRAsync("immersive-ar", "local-floor");
     } catch (error) {
       console.error('AR başlatma hatası:', error);
       setError('AR modu başlatılamadı: ' + error.message);
+    }
+  };
+
+  // AR modundan çık
+  const exitARSession = async () => {
+    try {
+      if (xrHelperRef.current && xrHelperRef.current.baseExperience) {
+        await xrHelperRef.current.baseExperience.exitXRAsync();
+      }
+    } catch (error) {
+      console.error('AR çıkış hatası:', error);
     }
   };
 
@@ -118,7 +144,7 @@ function App() {
       height: 10
     }, scene);
     ground.position.y = -1;
-    ground.visibility = isInAR ? 0 : 1; // AR modunda ground'u gizle
+    ground.visibility = isInAR ? 0 : 1;
 
     // GLTF modelini yükle
     BABYLON.SceneLoader.LoadAssetContainer(
@@ -129,20 +155,16 @@ function App() {
         console.log("Container yüklendi:", container);
         
         if (container && container.meshes && container.meshes.length > 0) {
-          // Tüm meshler sahneye ekle
           container.addAllToScene();
           
-          // Tüm meshleri grupla
           const rootNode = new BABYLON.TransformNode("root", scene);
           container.meshes.forEach(mesh => {
             mesh.parent = rootNode;
           });
           
-          // Root node'u ölçeklendir ve konumlandır
           rootNode.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
           rootNode.position = new BABYLON.Vector3(0, 0, 0);
           
-          // Animasyon (sadece AR modunda değilken)
           scene.registerBeforeRender(() => {
             if (!isInAR && rootNode) {
               rootNode.rotation.y += 0.01;
@@ -198,7 +220,7 @@ function App() {
         engineRef.current.dispose();
       }
     };
-  }, [isInAR]); // isInAR değiştiğinde effect'i yeniden çalıştır
+  }, [isInAR]);
 
   return (
     <div className="app-container">
@@ -224,7 +246,7 @@ function App() {
 
       <button 
         className={`ar-button ${!isARSupported ? 'disabled' : ''} ${isInAR ? 'active' : ''}`}
-        onClick={startARSession}
+        onClick={isInAR ? exitARSession : startARSession}
         disabled={!isARSupported}
       >
         <span className="ar-icon">📱</span>
