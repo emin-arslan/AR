@@ -1,39 +1,78 @@
-import React, { Suspense, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, Stars, useAnimations } from '@react-three/drei';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Environment, Stars, useAnimations, Center } from '@react-three/drei';
+import * as THREE from 'three';
 import './App.css';
 
 function Model() {
+  const group = useRef();
   const { scene, animations } = useGLTF('./output.gltf');
   const { actions } = useAnimations(animations, scene);
   const [hovered, setHovered] = useState(false);
+  const { camera } = useThree();
 
   useEffect(() => {
+    if (scene) {
+      // Modelin boundingBox'ını hesapla
+      const box = new THREE.Box3().setFromObject(scene);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      
+      // En büyük boyuta göre kamerayı ayarla
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      const cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
+      
+      camera.position.z = cameraZ * 1.5; // Biraz daha uzak dur
+      camera.updateProjectionMatrix();
+
+      // Modeli merkeze al
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      scene.position.sub(center);
+    }
+
     // Tüm animasyonları başlat
     Object.values(actions).forEach(action => action?.play());
-  }, [actions]);
+  }, [scene, actions, camera]);
+
+  // Otomatik döndürme
+  useFrame((state) => {
+    if (group.current) {
+      group.current.rotation.y += 0.002;
+    }
+  });
 
   return (
-    <primitive 
-      object={scene} 
-      scale={0.5}
-      position={[0, 0, 0]}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
-    >
-      {hovered && (
-        <mesh>
-          <sphereGeometry args={[2, 32, 32]} />
-          <meshBasicMaterial color="#00ff00" transparent opacity={0.2} />
-        </mesh>
-      )}
-    </primitive>
+    <group ref={group}>
+      <primitive 
+        object={scene} 
+        scale={1}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        {hovered && (
+          <mesh>
+            <sphereGeometry args={[2, 32, 32]} />
+            <meshBasicMaterial color="#00ff00" transparent opacity={0.2} />
+          </mesh>
+        )}
+      </primitive>
+    </group>
   );
 }
 
 function Particles() {
+  const points = useRef();
+
+  useFrame((state) => {
+    if (points.current) {
+      points.current.rotation.y += 0.001;
+    }
+  });
+
   return (
-    <points>
+    <points ref={points}>
       <bufferGeometry>
         <bufferAttribute
           attachObject={['attributes', 'position']}
@@ -67,8 +106,11 @@ function Scene() {
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
-        minDistance={2}
-        maxDistance={20}
+        minDistance={1}
+        maxDistance={50}
+        target={[0, 0, 0]}
+        enableDamping
+        dampingFactor={0.05}
       />
     </>
   );
@@ -91,42 +133,39 @@ function App() {
       )}
       <div className="canvas-container">
         <Canvas 
-          camera={{ position: [0, 1, 5], fov: 50 }}
+          camera={{ position: [0, 1, 5], fov: 45 }}
           gl={{ 
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
+            preserveDrawingBuffer: true
           }}
+          dpr={[1, 2]}
+          shadows
         >
           <Scene />
         </Canvas>
       </div>
-      <div className="controls">
+      <div className="controls controls-mobile">
         <div className="controls-header">
-          <h1>Interactive 3D Viewer</h1>
+          <h1>3D Viewer</h1>
         </div>
         <div className="controls-content">
           <div className="feature-list">
-            <h2>Features</h2>
             <ul>
               <li>
                 <span className="icon">🔄</span>
-                Rotate: Left click and drag
+                Rotate
               </li>
               <li>
                 <span className="icon">🔍</span>
-                Zoom: Mouse wheel or pinch
+                Zoom
               </li>
               <li>
                 <span className="icon">✋</span>
-                Pan: Right click and drag
+                Pan
               </li>
             </ul>
-          </div>
-          <div className="interaction-tips">
-            <h2>Interaction Tips</h2>
-            <p>Hover over the model to see special effects!</p>
-            <p>The model animates automatically if it has animations.</p>
           </div>
         </div>
       </div>
