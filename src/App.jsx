@@ -4,6 +4,8 @@ import { OrbitControls, useGLTF, Environment, Stars, useAnimations } from '@reac
 import * as THREE from 'three';
 import './App.css';
 
+const APP_VERSION = "1.0.2"; // Versiyon güncellendi
+
 function Model() {
   const group = useRef();
   const { scene, animations } = useGLTF('./output.gltf');
@@ -124,19 +126,45 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAR, setIsAR] = useState(false);
   const [arSupported, setARSupported] = useState(false);
+  const [arError, setArError] = useState(null);
   const canvasRef = useRef();
   const sessionRef = useRef(null);
 
   useEffect(() => {
     checkARSupport();
     setTimeout(() => setIsLoading(false), 3000);
+
+    // Cleanup
+    return () => {
+      if (sessionRef.current) {
+        sessionRef.current.end().catch(console.error);
+      }
+    };
   }, []);
 
   const checkARSupport = async () => {
-    // iOS için Quick Look AR desteğini kontrol et
+    setArError(null);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
     if (isIOS) {
-      setARSupported(true);
+      try {
+        // iOS için Quick Look AR desteğini kontrol et
+        const link = document.createElement('a');
+        if ('relList' in link && link.relList.supports('ar')) {
+          setARSupported(true);
+          // iOS için USDZ dosyasının varlığını kontrol et
+          const response = await fetch('/output.usdz');
+          if (!response.ok) {
+            throw new Error('USDZ dosyası bulunamadı');
+          }
+        } else {
+          throw new Error('AR desteklenmiyor');
+        }
+      } catch (error) {
+        console.error('iOS AR kontrolü başarısız:', error);
+        setArError('iOS AR desteklenmiyor veya USDZ dosyası eksik');
+        setARSupported(false);
+      }
       return;
     }
 
@@ -145,24 +173,57 @@ function App() {
       try {
         const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
         setARSupported(isSupported);
+        if (!isSupported) {
+          throw new Error('WebXR AR desteklenmiyor');
+        }
       } catch (error) {
         console.error('AR destek kontrolü başarısız:', error);
+        setArError('WebXR AR desteklenmiyor');
         setARSupported(false);
       }
+    } else {
+      setArError('WebXR API bulunamadı');
+      setARSupported(false);
     }
   };
 
   const startAR = async () => {
-    // iOS için Quick Look AR'ı başlat
+    setArError(null);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
     if (isIOS) {
-      // USDZ veya REALITY dosyasını aç
-      window.location.href = 'output.usdz';
+      try {
+        // iOS için Quick Look AR'ı başlat
+        const anchor = document.createElement('a');
+        anchor.setAttribute('rel', 'ar');
+        anchor.setAttribute('href', '/output.usdz');
+        
+        // iOS 13+ için ek özellikler
+        anchor.setAttribute('data-usdzscale', '1');
+        anchor.setAttribute('data-usdztitle', '3D Model');
+        anchor.setAttribute('data-usdzanimated', 'true');
+        
+        // Görünmez bir img ekle (iOS gerektiriyor)
+        const img = document.createElement('img');
+        img.style.display = 'none';
+        anchor.appendChild(img);
+        
+        // Tıklama olayını tetikle
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      } catch (error) {
+        console.error('iOS AR başlatma hatası:', error);
+        setArError('iOS AR başlatılamadı');
+      }
       return;
     }
 
-    // Android ve diğer cihazlar için WebXR'ı başlat
-    if (!canvasRef.current) return;
+    // Android ve diğer cihazlar için WebXR
+    if (!canvasRef.current) {
+      setArError('Canvas referansı bulunamadı');
+      return;
+    }
 
     try {
       if (sessionRef.current) {
@@ -178,11 +239,12 @@ function App() {
       });
 
       sessionRef.current = session;
-
+      
       const gl = canvasRef.current.getContext('webgl', {
         xrCompatible: true,
         antialias: true,
-        alpha: true
+        alpha: true,
+        preserveDrawingBuffer: true
       });
 
       await gl.makeXRCompatible();
@@ -192,23 +254,18 @@ function App() {
         setIsAR(false);
       });
 
-      const xrSystem = await navigator.xr;
       const referenceSpace = await session.requestReferenceSpace('local');
-      const viewerSpace = await session.requestReferenceSpace('viewer');
-
+      
       session.updateRenderState({
         baseLayer: new XRWebGLLayer(session, gl)
       });
 
       setIsAR(true);
 
-      // AR session başlatıldığında animasyon döngüsünü başlat
       const onXRFrame = (time, frame) => {
         if (!sessionRef.current) return;
-
         session.requestAnimationFrame(onXRFrame);
         const pose = frame.getViewerPose(referenceSpace);
-
         if (pose) {
           const view = pose.views[0];
           const viewport = session.renderState.baseLayer.getViewport(view);
@@ -219,17 +276,10 @@ function App() {
       session.requestAnimationFrame(onXRFrame);
     } catch (error) {
       console.error('AR başlatılamadı:', error);
-      alert('AR başlatılırken bir hata oluştu. Lütfen tarayıcınızın ve cihazınızın AR desteklediğinden emin olun.');
+      setArError('AR başlatılırken bir hata oluştu');
+      setIsAR(false);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (sessionRef.current) {
-        sessionRef.current.end().catch(console.error);
-      }
-    };
-  }, []);
 
   return (
     <div className="app-container">
@@ -239,6 +289,32 @@ function App() {
           <p>Loading 3D Experience...</p>
         </div>
       )}
+      <div className="top-controls">
+        <div className="controls-header">
+          <h1>3D Model Viewer</h1>
+          <div className="version-badge">v{APP_VERSION}</div>
+        </div>
+        <div className="controls-content">
+          <div className="feature-list">
+            <ul>
+              <li>
+                <span className="icon">🔄</span>
+                Rotate
+              </li>
+              <li>
+                <span className="icon">🔍</span>
+                Zoom
+              </li>
+            </ul>
+          </div>
+          {arError && (
+            <div className="ar-error">
+              <span className="icon">⚠️</span>
+              {arError}
+            </div>
+          )}
+        </div>
+      </div>
       <div className="canvas-container">
         <Canvas 
           ref={canvasRef}
@@ -262,34 +338,6 @@ function App() {
         >
           <span className="ar-icon">{isAR ? '✕' : '📱'}</span>
         </button>
-      </div>
-      <div className="controls controls-mobile">
-        <div className="controls-header">
-          <h1>3D Viewer</h1>
-          <span className="ar-badge">AR Ready</span>
-        </div>
-        <div className="controls-content">
-          <div className="feature-list">
-            <ul>
-              <li>
-                <span className="icon">🔄</span>
-                Rotate
-              </li>
-              <li>
-                <span className="icon">🔍</span>
-                Zoom
-              </li>
-              <li>
-                <span className="icon">✋</span>
-                Pan
-              </li>
-              <li>
-                <span className="icon">📱</span>
-                AR Available
-              </li>
-            </ul>
-          </div>
-        </div>
       </div>
     </div>
   );
