@@ -12,7 +12,6 @@
   "dependencies": {
     "@react-three/drei": "^9.120.5",
     "@react-three/fiber": "^8.17.10",
-    "@react-three/postprocessing": "^2.16.5",
     "@react-three/xr": "^6.4.12",
     "@types/three": "^0.171.0",
     "react": "^18.3.1",
