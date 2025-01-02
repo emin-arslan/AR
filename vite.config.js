@@ -1,7 +1,14 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/AR/',
+  base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
   server: {
     port: 3000
   }
