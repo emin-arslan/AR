@@ -6,15 +6,21 @@ class ARViewer {
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            logarithmicDepthBuffer: true
+        });
         this.model = null;
         this.mixer = null;
         this.clock = new THREE.Clock();
+        this.isInAR = false;
 
         this.init();
         this.setupLights();
         this.setupControls();
         this.loadModel();
+        this.setupAR();
         this.animate();
     }
 
@@ -24,15 +30,15 @@ class ARViewer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.shadowMap.enabled = true;
+        this.renderer.xr.enabled = true;
         document.body.appendChild(this.renderer.domElement);
 
         // Kamera ayarları
-        this.camera.position.set(0, 1, 2);
+        this.camera.position.set(0, 1.6, 3);
         this.camera.lookAt(0, 0, 0);
 
         // Sahne arkaplanı
         this.scene.background = null;
-        this.scene.fog = new THREE.Fog(0x000000, 1, 15);
 
         // Pencere yeniden boyutlandırma
         window.addEventListener('resize', () => {
@@ -44,22 +50,18 @@ class ARViewer {
 
     setupLights() {
         // Ambient ışık
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         this.scene.add(ambientLight);
 
         // Directional ışık
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
         dirLight.position.set(5, 5, 5);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
         this.scene.add(dirLight);
 
-        // Spot ışık
-        const spotLight = new THREE.SpotLight(0xffffff, 0.5);
-        spotLight.position.set(-5, 5, 0);
-        spotLight.castShadow = true;
-        this.scene.add(spotLight);
+        // Hemisphere ışık
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+        this.scene.add(hemiLight);
     }
 
     setupControls() {
@@ -72,18 +74,95 @@ class ARViewer {
         this.controls.maxPolarAngle = Math.PI / 2;
     }
 
+    async setupAR() {
+        const arButton = document.createElement('button');
+        arButton.className = 'control-button';
+        arButton.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        `;
+
+        if ('xr' in navigator) {
+            const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
+            if (isSupported) {
+                arButton.textContent = 'AR Moduna Geç';
+                arButton.addEventListener('click', () => this.startAR());
+            } else {
+                arButton.textContent = 'AR Desteklenmiyor';
+                arButton.style.background = '#999';
+                arButton.style.cursor = 'not-allowed';
+                arButton.addEventListener('click', () => {
+                    alert('Tarayıcınız veya cihazınız AR\'ı desteklemiyor. Lütfen AR destekli bir cihaz ve tarayıcı kullanın.\n\niOS: Safari (iOS 13+)\nAndroid: Chrome (ARCore destekli)');
+                });
+            }
+        } else {
+            arButton.textContent = 'AR Desteklenmiyor';
+            arButton.style.background = '#999';
+            arButton.style.cursor = 'not-allowed';
+            arButton.addEventListener('click', () => {
+                alert('Tarayıcınız WebXR\'ı desteklemiyor. Lütfen modern bir mobil tarayıcı kullanın.');
+            });
+        }
+
+        document.body.appendChild(arButton);
+    }
+
+    async startAR() {
+        try {
+            const session = await navigator.xr.requestSession('immersive-ar', {
+                requiredFeatures: ['hit-test']
+            });
+
+            this.renderer.xr.enabled = true;
+            await this.renderer.xr.setSession(session);
+            this.isInAR = true;
+
+            // AR modunda modeli yeniden konumlandır
+            if (this.model) {
+                this.model.position.set(0, 0, -1);
+                this.model.scale.set(0.2, 0.2, 0.2);
+            }
+
+            session.addEventListener('end', () => {
+                this.renderer.xr.enabled = false;
+                this.isInAR = false;
+                if (this.model) {
+                    this.model.position.set(0, 0, 0);
+                    this.model.scale.set(0.5, 0.5, 0.5);
+                }
+            });
+
+        } catch (error) {
+            console.error('AR başlatma hatası:', error);
+            alert('AR modu başlatılamadı. Tarayıcınız AR\'ı desteklemiyor olabilir.');
+        }
+    }
+
     loadModel() {
         // Loading ekranı
         const loadingDiv = document.createElement('div');
-        loadingDiv.style.position = 'fixed';
-        loadingDiv.style.top = '50%';
-        loadingDiv.style.left = '50%';
-        loadingDiv.style.transform = 'translate(-50%, -50%)';
-        loadingDiv.style.background = 'rgba(0,0,0,0.8)';
-        loadingDiv.style.color = 'white';
-        loadingDiv.style.padding = '20px';
-        loadingDiv.style.borderRadius = '10px';
-        loadingDiv.style.zIndex = '1000';
+        loadingDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        `;
         loadingDiv.textContent = 'Model Yükleniyor...';
         document.body.appendChild(loadingDiv);
 
@@ -94,16 +173,21 @@ class ARViewer {
             (gltf) => {
                 this.model = gltf.scene;
                 
-                // Model ayarları
-                this.model.scale.set(0.5, 0.5, 0.5);
-                this.model.position.set(0, 0, 0);
+                // Model boyutunu otomatik ayarla
+                const box = new THREE.Box3().setFromObject(this.model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 1 / maxDim;
+                this.model.scale.multiplyScalar(scale);
+
+                // Model pozisyonu
+                this.model.position.set(0, 0, -2);
                 
-                // Gölgeler
+                // Gölgeler ve materyal
                 this.model.traverse((node) => {
                     if (node.isMesh) {
                         node.castShadow = true;
                         node.receiveShadow = true;
-                        // PBR materyal ayarları
                         if (node.material) {
                             node.material.envMapIntensity = 1;
                             node.material.needsUpdate = true;
@@ -120,8 +204,6 @@ class ARViewer {
 
                 this.scene.add(this.model);
                 document.body.removeChild(loadingDiv);
-
-                // Kontrol butonları
                 this.addControls();
             },
             (progress) => {
@@ -137,27 +219,16 @@ class ARViewer {
 
     addControls() {
         const controlsDiv = document.createElement('div');
-        controlsDiv.style.position = 'fixed';
-        controlsDiv.style.bottom = '20px';
-        controlsDiv.style.left = '50%';
-        controlsDiv.style.transform = 'translateX(-50%)';
-        controlsDiv.style.display = 'flex';
-        controlsDiv.style.gap = '10px';
-        controlsDiv.style.zIndex = '1000';
+        controlsDiv.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        `;
 
-        // Reset butonu
-        const resetButton = document.createElement('button');
-        resetButton.textContent = 'Modeli Sıfırla';
-        resetButton.className = 'control-button';
-        resetButton.onclick = () => this.resetModel();
-
-        // Döndürme butonu
-        const rotateButton = document.createElement('button');
-        rotateButton.textContent = 'Otomatik Döndür';
-        rotateButton.className = 'control-button';
-        rotateButton.onclick = () => this.toggleRotation();
-
-        // Buton stilleri
         const buttonStyle = `
             padding: 12px 24px;
             background: #007AFF;
@@ -170,8 +241,19 @@ class ARViewer {
             transition: all 0.3s ease;
         `;
 
+        // Reset butonu
+        const resetButton = document.createElement('button');
+        resetButton.textContent = 'Modeli Sıfırla';
+        resetButton.className = 'control-button';
         resetButton.style.cssText = buttonStyle;
+        resetButton.onclick = () => this.resetModel();
+
+        // Döndürme butonu
+        const rotateButton = document.createElement('button');
+        rotateButton.textContent = 'Otomatik Döndür';
+        rotateButton.className = 'control-button';
         rotateButton.style.cssText = buttonStyle;
+        rotateButton.onclick = () => this.toggleRotation();
 
         controlsDiv.appendChild(resetButton);
         controlsDiv.appendChild(rotateButton);
@@ -180,9 +262,18 @@ class ARViewer {
 
     resetModel() {
         if (this.model) {
-            this.model.position.set(0, 0, 0);
+            if (this.isInAR) {
+                this.model.position.set(0, 0, -1);
+                this.model.scale.set(0.2, 0.2, 0.2);
+            } else {
+                this.model.position.set(0, 0, -2);
+                const box = new THREE.Box3().setFromObject(this.model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 1 / maxDim;
+                this.model.scale.set(scale, scale, scale);
+            }
             this.model.rotation.set(0, 0, 0);
-            this.model.scale.set(0.5, 0.5, 0.5);
         }
     }
 
@@ -193,19 +284,27 @@ class ARViewer {
     }
 
     animate() {
-        requestAnimationFrame(this.animate.bind(this));
+        if (this.isInAR) {
+            this.renderer.setAnimationLoop(this.render.bind(this));
+        } else {
+            requestAnimationFrame(this.animate.bind(this));
+            this.render();
+        }
+    }
 
-        // Model rotasyonu
-        if (this.model && this.isRotating) {
+    render() {
+        if (this.model && this.isRotating && !this.isInAR) {
             this.model.rotation.y += 0.01;
         }
 
-        // Animasyonları güncelle
         if (this.mixer) {
             this.mixer.update(this.clock.getDelta());
         }
 
-        this.controls.update();
+        if (!this.isInAR) {
+            this.controls.update();
+        }
+
         this.renderer.render(this.scene, this.camera);
     }
 }
