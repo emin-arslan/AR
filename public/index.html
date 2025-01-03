@@ -9,26 +9,20 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     
     <style>
-        html, body {
+        body {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
             background: #1a1a1a;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .container {
-            position: fixed;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
         }
 
         model-viewer {
@@ -43,25 +37,60 @@
             --camera-target: 0m 0m 0m;
         }
 
-        /* Model seçici için responsive düzenlemeler */
-        .model-selector {
+        .ar-button {
             position: fixed;
-            top: max(20px, 2vh);
-            left: max(20px, 2vw);
-            z-index: 1000;
-        }
-
-        select {
-            max-width: 90vw;
-            min-width: 120px;
-            width: auto;
+            bottom: 32px;
+            right: 32px;
             background-color: #ffffff15;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid #ffffff30;
             color: white;
             padding: 12px 24px;
-            font-size: clamp(12px, 3vw, 14px);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .ar-button:hover {
+            background-color: #ffffff25;
+            transform: translateY(-2px);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #ffffff10;
+        }
+
+        .update-bar {
+            height: 100%;
+            background-color: #ffffff;
+            transition: width 0.3s ease;
+        }
+
+        /* Yeni eklenen stiller */
+        .model-selector {
+            position: fixed;
+            top: 32px;
+            left: 32px;
+            z-index: 1000;
+        }
+
+        select {
+            background-color: #ffffff15;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #ffffff30;
+            color: white;
+            padding: 12px 24px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             border-radius: 50px;
@@ -70,30 +99,16 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        /* AR butonu için responsive düzenlemeler */
-        .ar-button {
-            position: fixed;
-            bottom: max(20px, 2vh);
-            right: max(20px, 2vw);
-            background-color: #ffffff15;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid #ffffff30;
-            color: white;
-            padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 24px);
-            font-size: clamp(12px, 3vw, 14px);
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            white-space: nowrap;
-            max-width: 90vw;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        select:hover {
+            background-color: #ffffff25;
         }
 
-        /* Loading ekranı responsive düzenlemeler */
+        option {
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        /* Loading ekranı için yeni stiller */
         .loading-container {
             position: fixed;
             top: 0;
@@ -108,83 +123,29 @@
             transition: opacity 0.5s ease;
         }
 
-        .loading-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(10px, 2vh, 20px);
-            padding: 20px;
-            max-width: 90vw;
-            text-align: center;
-        }
-
-        .loading-text {
-            color: white;
-            font-size: clamp(14px, 4vw, 18px);
-            font-weight: 500;
-        }
-
         .loading-spinner {
-            width: clamp(30px, 8vw, 50px);
-            height: clamp(30px, 8vw, 50px);
+            width: 50px;
+            height: 50px;
             border: 3px solid #ffffff30;
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
         }
 
-        /* Progress bar responsive düzenlemeler */
-        .progress-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: max(2px, 0.3vh);
-            background: #ffffff10;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .update-bar {
-            height: 100%;
-            background-color: #ffffff;
-            transition: width 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .model-selector {
-                top: 10px;
-                left: 10px;
-            }
-
-            .ar-button {
-                bottom: 10px;
-                right: 10px;
-            }
-
-            select, .ar-button {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
-        }
-
-        @media (max-height: 500px) {
-            .loading-spinner {
-                width: 30px;
-                height: 30px;
-            }
-
-            .loading-text {
-                font-size: 14px;
-            }
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
     <!-- Loading ekranı -->
     <div id="loadingScreen" class="loading-container">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div id="loadingProgress" class="loading-text">%0</div>
-        </div>
+        <div class="loading-spinner"></div>
     </div>
 
     <div class="container">
@@ -236,12 +197,6 @@
     <script>
         const modelViewer = document.getElementById('modelViewer');
         const loadingScreen = document.getElementById('loadingScreen');
-        const loadingProgress = document.getElementById('loadingProgress');
-
-        // Yükleme durumu için değişkenler
-        let isLoading = false;
-        let lastProgress = 0;
-        let progressTimeout = null;
 
         // Her model için özel kamera ayarları
         const modelSettings = {
@@ -268,73 +223,19 @@
             }
         };
 
-        // Progress olaylarını dinle
-        modelViewer.addEventListener('progress', (event) => {
-            const progress = event.detail;
-            
-            // Eğer total değeri varsa yüzde hesapla
-            if (progress.total > 0) {
-                const percentage = Math.min(Math.floor((progress.loaded / progress.total) * 100), 100);
-                
-                // Sadece ilerleme varsa güncelle
-                if (percentage > lastProgress) {
-                    lastProgress = percentage;
-                    loadingProgress.textContent = `%${percentage}`;
-                }
-            } else {
-                // Total değeri yoksa binary dosya yüklemesini takip et
-                handleBinaryProgress(progress);
-            }
-
-            // Progress durumu uzun süre değişmezse kontrol et
-            resetProgressTimeout();
+        // Model yüklenme olaylarını dinle
+        modelViewer.addEventListener('load', () => {
+            loadingScreen.classList.add('hidden');
         });
 
-        function handleBinaryProgress(progress) {
-            if (progress.loaded) {
-                // Binary dosya boyutuna göre yaklaşık ilerleme hesapla
-                const estimatedProgress = Math.min(Math.floor((progress.loaded / 1000000) * 20), 95);
-                if (estimatedProgress > lastProgress) {
-                    lastProgress = estimatedProgress;
-                    loadingProgress.textContent = `%${estimatedProgress}`;
-                }
-            }
-        }
-
-        function resetProgressTimeout() {
-            if (progressTimeout) {
-                clearTimeout(progressTimeout);
-            }
-
-            progressTimeout = setTimeout(() => {
-                if (isLoading && lastProgress < 100) {
-                    completeLoading();
-                }
-            }, 3000); // 3 saniye boyunca ilerleme olmazsa yüklemeyi tamamla
-        }
-
-        function completeLoading() {
-            loadingProgress.textContent = '%100';
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-                isLoading = false;
-                lastProgress = 0;
-            }, 500);
-        }
+        modelViewer.addEventListener('error', () => {
+            console.error('Model yüklenirken hata oluştu');
+            loadingScreen.classList.add('hidden');
+        });
 
         function changeModel() {
             const selectedModel = document.getElementById('modelSelect').value;
-            
-            // Önceki yüklemeyi temizle
-            if (progressTimeout) {
-                clearTimeout(progressTimeout);
-            }
-            
-            // Yükleme durumunu sıfırla
-            isLoading = true;
-            lastProgress = 0;
             loadingScreen.classList.remove('hidden');
-            loadingProgress.textContent = '%0';
 
             // Seçilen modelin ayarlarını uygula
             const settings = modelSettings[selectedModel];
@@ -348,35 +249,8 @@
             modelViewer.src = `./${selectedModel}/output.gltf`;
         }
 
-        // Model yüklenme olaylarını dinle
-        modelViewer.addEventListener('load', () => {
-            completeLoading();
-        });
-
-        modelViewer.addEventListener('error', (error) => {
-            console.error('Model yüklenirken hata oluştu:', error);
-            loadingProgress.textContent = 'Hata!';
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-                isLoading = false;
-                lastProgress = 0;
-            }, 1000);
-        });
-
-        // Preload işlemi için yardımcı fonksiyon
-        function preloadModel(modelPath) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('HEAD', modelPath, true);
-                xhr.onload = () => resolve();
-                xhr.onerror = () => reject();
-                xhr.send();
-            });
-        }
-
-        // Sayfa yüklendiğinde
+        // Sayfa yüklendiğinde varsayılan model için ayarları uygula
         window.addEventListener('load', () => {
-            isLoading = true;
             const settings = modelSettings.suspension;
             modelViewer.cameraOrbit = settings.orbit;
             modelViewer.cameraTarget = settings.target;
