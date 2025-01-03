@@ -4,53 +4,107 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Viewer</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            overflow: hidden;
-        }
-        #scene-container {
+        .arjs-loader {
             position: fixed;
+            z-index: 999;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            left: 0;
-            top: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
         }
-        .ar-button {
+
+        .arjs-loader div {
+            text-align: center;
+            font-size: 1.25em;
+            color: white;
+        }
+
+        .custom-button {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 12px 24px;
+            padding: 10px 20px;
             background: #007AFF;
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 20px;
             font-size: 16px;
+            z-index: 10;
             cursor: pointer;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            z-index: 1000;
         }
     </style>
   </head>
-  <body>
-    <div id="scene-container"></div>
-    <button id="ar-button" class="ar-button">Start AR</button>
-    <div id="loading" class="loading" style="display: none;">Loading...</div>
-    <script type="module" src="/src/main.js"></script>
+  <body style="margin: 0; overflow: hidden;">
+    <!-- Loading screen -->
+    <div class="arjs-loader">
+        <div>Yükleniyor, lütfen bekleyin...</div>
+    </div>
+
+    <!-- AR Scene -->
+    <a-scene
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true;"
+        embedded
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+
+        <!-- Marker pattern -->
+        <a-marker type="pattern" preset="hiro">
+            <!-- 3D model -->
+            <a-entity
+                position="0 0 0"
+                scale="0.5 0.5 0.5"
+                rotation="0 0 0"
+                gltf-model="/output.gltf"
+                animation-mixer>
+            </a-entity>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <!-- Custom button -->
+    <button class="custom-button" onclick="toggleModel()">Model Görünürlüğünü Değiştir</button>
+
+    <script>
+        // Loading screen'i kaldır
+        window.addEventListener('load', () => {
+            const loader = document.querySelector('.arjs-loader');
+            loader.style.display = 'none';
+        });
+
+        // Model görünürlüğünü değiştir
+        function toggleModel() {
+            const model = document.querySelector('[gltf-model]');
+            model.object3D.visible = !model.object3D.visible;
+        }
+
+        // Hata yakalama
+        AFRAME.registerComponent('error-handler', {
+            init: function () {
+                this.el.addEventListener('model-error', function (e) {
+                    console.error('Model yükleme hatası:', e.detail);
+                    alert('Model yüklenirken bir hata oluştu.');
+                });
+            }
+        });
+
+        // Model yükleme başarılı
+        AFRAME.registerComponent('model-loaded', {
+            init: function () {
+                this.el.addEventListener('model-loaded', function () {
+                    console.log('Model başarıyla yüklendi');
+                });
+            }
+        });
+    </script>
   </body>
 </html>

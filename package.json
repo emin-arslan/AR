@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "three": "^0.159.0"
+    "three": "^0.159.0",
+    "ar.js": "^2.2.2",
+    "mind-ar": "^1.2.3"
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "^1.2.0",
