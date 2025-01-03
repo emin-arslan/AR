@@ -148,40 +148,105 @@ class ARViewer {
             const isAndroid = /android/i.test(navigator.userAgent);
 
             if (isIOS) {
-                // iOS için USDZ dönüşümü
+                // iOS için Quick Look
                 const usdzUrl = `https://modelviewer.dev/shared-assets/create-usdz.php?src=${encodeURIComponent(modelUrl)}`;
                 
-                // Quick Look'u başlat
+                // iOS için özel div oluştur
+                const arDiv = document.createElement('div');
+                arDiv.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 9999;
+                    background: transparent;
+                `;
+                
+                // Quick Look için özel link
                 const anchor = document.createElement('a');
                 anchor.setAttribute('rel', 'ar');
                 anchor.setAttribute('href', usdzUrl);
-                
-                // iOS 13+ için ek özellikler
                 anchor.setAttribute('data-usdzalt', modelUrl);
                 anchor.setAttribute('data-title', 'AR Model');
+                anchor.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0;
+                `;
 
-                // iOS 12 için fallback
+                // iOS için gerekli olan img elementi
                 const img = document.createElement('img');
                 img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                
                 anchor.appendChild(img);
+                arDiv.appendChild(anchor);
+                document.body.appendChild(arDiv);
 
-                anchor.click();
+                // Otomatik tıklama
+                setTimeout(() => {
+                    anchor.click();
+                    // Tıklamadan sonra div'i kaldır
+                    setTimeout(() => {
+                        document.body.removeChild(arDiv);
+                    }, 1000);
+                }, 100);
+
             } else if (isAndroid) {
                 // Android için Scene Viewer
-                // Intent URL'ini güncelle ve fallback ekle
-                const sceneViewerUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred&title=AR Model#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`;
+                const modelViewer = document.createElement('div');
+                modelViewer.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 9999;
+                    background: transparent;
+                `;
 
-                // Scene Viewer'ı başlat
-                window.location.href = sceneViewerUrl;
+                // Scene Viewer için farklı URL formatları dene
+                const urls = [
+                    // Format 1: Doğrudan Scene Viewer
+                    `https://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred&title=AR%20Model`,
+                    // Format 2: Intent URL
+                    `intent://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`,
+                    // Format 3: Market URL
+                    `market://details?id=com.google.ar.core`
+                ];
 
-                // Fallback olarak yeni bir pencerede aç
-                setTimeout(() => {
-                    if (!document.hidden) {
-                        // Scene Viewer açılmadıysa, alternatif URL'i dene
-                        const fallbackUrl = `https://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred`;
-                        window.location.href = fallbackUrl;
+                let currentUrlIndex = 0;
+                const tryNextUrl = () => {
+                    if (currentUrlIndex < urls.length) {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.cssText = 'width:100%;height:100%;border:none;';
+                        iframe.src = urls[currentUrlIndex];
+                        
+                        modelViewer.innerHTML = '';
+                        modelViewer.appendChild(iframe);
+                        
+                        // URL başarısız olursa bir sonrakini dene
+                        setTimeout(() => {
+                            if (!document.hidden) {
+                                currentUrlIndex++;
+                                tryNextUrl();
+                            }
+                        }, 2000);
+                    } else {
+                        // Hiçbir URL çalışmazsa
+                        alert('AR görüntüleyici başlatılamadı. Lütfen ARCore\'un yüklü olduğundan emin olun.');
+                        document.body.removeChild(modelViewer);
                     }
-                }, 2000);
+                };
+
+                document.body.appendChild(modelViewer);
+                tryNextUrl();
+
             } else {
                 // WebXR desteği varsa kullan
                 if ('xr' in navigator) {
