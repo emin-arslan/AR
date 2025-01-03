@@ -103,9 +103,47 @@
             background-color: #1a1a1a;
             color: white;
         }
+
+        /* Loading ekranı için yeni stiller */
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #ffffff30;
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Loading ekranı -->
+    <div id="loadingScreen" class="loading-container">
+        <div class="loading-spinner"></div>
+    </div>
+
     <div class="container">
         <!-- Model seçici dropdown -->
         <div class="model-selector">
@@ -128,7 +166,6 @@
             background-color="#ffffff"
             shadow-intensity="1"
             shadow-softness="1"
-            camera-orbit="45deg 55deg 2.5m"
             exposure="1"
             ar-placement="floor"
             ar-scale="fixed"
@@ -137,10 +174,6 @@
             tone-mapping="aces"
             auto-rotate-delay="0"
             rotation-per-second="20deg"
-            min-camera-orbit="auto auto 5%"
-            max-camera-orbit="auto auto 100%"
-            camera-target="0 1.5m 0"
-            field-of-view="25deg"
             interpolation-decay="200"
             touch-action="pan-y"
         >
@@ -155,11 +188,69 @@
     </div>
 
     <script>
+        const modelViewer = document.getElementById('modelViewer');
+        const loadingScreen = document.getElementById('loadingScreen');
+
+        // Her model için özel kamera ayarları
+        const modelSettings = {
+            suspension: {
+                orbit: "45deg 55deg 2.5m",
+                target: "0 1.5m 0",
+                fieldOfView: "25deg",
+                minCameraOrbit: "auto auto 5%",
+                maxCameraOrbit: "auto auto 100%"
+            },
+            cemer: {
+                orbit: "0deg 75deg 3m",
+                target: "0 1m 0",
+                fieldOfView: "30deg",
+                minCameraOrbit: "auto auto 10%",
+                maxCameraOrbit: "auto auto 150%"
+            },
+            autodesk: {
+                orbit: "45deg 65deg 4m",
+                target: "0 0.5m 0",
+                fieldOfView: "35deg",
+                minCameraOrbit: "auto auto 15%",
+                maxCameraOrbit: "auto auto 200%"
+            }
+        };
+
+        // Model yüklenme olaylarını dinle
+        modelViewer.addEventListener('load', () => {
+            loadingScreen.classList.add('hidden');
+        });
+
+        modelViewer.addEventListener('error', () => {
+            console.error('Model yüklenirken hata oluştu');
+            loadingScreen.classList.add('hidden');
+        });
+
         function changeModel() {
-            const modelViewer = document.getElementById('modelViewer');
             const selectedModel = document.getElementById('modelSelect').value;
+            loadingScreen.classList.remove('hidden');
+
+            // Seçilen modelin ayarlarını uygula
+            const settings = modelSettings[selectedModel];
+            modelViewer.cameraOrbit = settings.orbit;
+            modelViewer.cameraTarget = settings.target;
+            modelViewer.fieldOfView = settings.fieldOfView;
+            modelViewer.minCameraOrbit = settings.minCameraOrbit;
+            modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+
+            // Yeni modeli yükle
             modelViewer.src = `./${selectedModel}/output.gltf`;
         }
+
+        // Sayfa yüklendiğinde varsayılan model için ayarları uygula
+        window.addEventListener('load', () => {
+            const settings = modelSettings.suspension;
+            modelViewer.cameraOrbit = settings.orbit;
+            modelViewer.cameraTarget = settings.target;
+            modelViewer.fieldOfView = settings.fieldOfView;
+            modelViewer.minCameraOrbit = settings.minCameraOrbit;
+            modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+        });
     </script>
 </body>
 </html>
