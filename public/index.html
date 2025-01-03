@@ -9,73 +9,107 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         model-viewer {
             width: 100%;
-            height: 90vh;
-            background-color: #f0f0f0;
+            height: 100%;
+            background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%);
+            --progress-bar-height: 2px;
+            --progress-bar-color: #ffffff3b;
         }
 
         .ar-button {
-            background-color: #4CAF50;
-            border: none;
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background-color: #ffffff15;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #ffffff30;
             color: white;
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 10px auto;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            border-radius: 4px;
-            display: block;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .ar-button:hover {
+            background-color: #ffffff25;
+            transform: translateY(-2px);
         }
 
         .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            background-color: #e0e0e0;
+            height: 2px;
+            background: #ffffff10;
         }
 
         .update-bar {
-            width: 0;
-            height: 4px;
-            background-color: #76c7c0;
-            transition: width 0.3s;
+            height: 100%;
+            background-color: #ffffff;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <model-viewer
-        src="./output.gltf"
-        alt="3D model"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        camera-controls
-        auto-rotate
-        environment-image="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr"
-        skybox-image="https://modelviewer.dev/shared-assets/environments/spruit_sunrise_1k_HDR.hdr"
-        shadow-intensity="1.5"
-        shadow-softness="1"
-        camera-orbit="45deg 55deg 2.5m"
-        exposure="1.2"
-        ar-placement="floor"
-        ar-scale="fixed"
-        loading="eager"
-        quick-look-browsers="safari chrome"
-        tone-mapping="aces"
-        experimental-pmrem
-        auto-rotate-delay="0"
-        rotation-per-second="30deg"
-        min-camera-orbit="auto auto 5%"
-        max-camera-orbit="auto auto 100%"
-        camera-target="0 1.5m 0"
-        field-of-view="30deg"
-    >
-        <!-- AR butonu -->
-        <button slot="ar-button" class="ar-button">
-            AR'da Görüntüle
-        </button>
+    <div class="container">
+        <model-viewer
+            src="./output.gltf"
+            alt="3D model"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            camera-controls
+            auto-rotate
+            environment-image="https://modelviewer.dev/shared-assets/environments/industrial_sunset_02_1k.hdr"
+            skybox-image="https://modelviewer.dev/shared-assets/environments/industrial_sunset_02_1k.hdr"
+            shadow-intensity="1"
+            shadow-softness="1"
+            camera-orbit="45deg 55deg 2.5m"
+            exposure="1"
+            ar-placement="floor"
+            ar-scale="fixed"
+            loading="eager"
+            quick-look-browsers="safari chrome"
+            tone-mapping="aces"
+            experimental-pmrem
+            auto-rotate-delay="0"
+            rotation-per-second="20deg"
+            min-camera-orbit="auto auto 5%"
+            max-camera-orbit="auto auto 100%"
+            camera-target="0 1.5m 0"
+            field-of-view="25deg"
+            interpolation-decay="200"
+            touch-action="pan-y"
+        >
+            <button slot="ar-button" class="ar-button">
+                AR'da Görüntüle
+            </button>
 
-        <!-- Yükleme animasyonu -->
-        <div class="progress-bar" slot="progress-bar">
-            <div class="update-bar"></div>
-        </div>
-    </model-viewer>
+            <div class="progress-bar" slot="progress-bar">
+                <div class="update-bar"></div>
+            </div>
+        </model-viewer>
+    </div>
 </body>
 </html>
