@@ -5,9 +5,21 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 export default defineConfig({
   plugins: [basicSsl()],
   server: {
-    https: true,
-    host: true,
-    cors: true
+    host: '0.0.0.0',
+    port: 3000,
+    https: {
+      key: null,
+      cert: null,
+    },
+    cors: true,
+    hmr: {
+      host: 'localhost',
+      port: 3000
+    }
+  },
+  preview: {
+    port: 3000,
+    host: true
   },
   optimizeDeps: {
     include: ['three']

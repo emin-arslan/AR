@@ -1,110 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<html>
+<head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Viewer</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <title>AR Görüntüleyici</title>
+    <!-- A-Frame ve AR.js için CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.2/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-        .arjs-loader {
+        .loading {
             position: fixed;
-            z-index: 999;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-        }
-
-        .arjs-loader div {
-            text-align: center;
-            font-size: 1.25em;
             color: white;
+            font-size: 1.5em;
+            z-index: 9999;
         }
-
-        .custom-button {
+        .ar-controls {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        .ar-button {
+            padding: 12px 24px;
             background: #007AFF;
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 25px;
             font-size: 16px;
-            z-index: 10;
             cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .ar-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
         }
     </style>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
-    <!-- Loading screen -->
-    <div class="arjs-loader">
-        <div>Yükleniyor, lütfen bekleyin...</div>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <div class="loading" id="loading">Yükleniyor...</div>
+
+    <div class="ar-controls">
+        <button class="ar-button" onclick="resetModel()">Modeli Sıfırla</button>
+        <button class="ar-button" onclick="toggleRotation()">Dönüşü Aç/Kapat</button>
     </div>
 
-    <!-- AR Scene -->
     <a-scene
-        vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true;"
         embedded
-        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmicDepthBuffer: true; antialias: true"
+        vr-mode-ui="enabled: false">
 
-        <!-- Marker pattern -->
-        <a-marker type="pattern" preset="hiro">
-            <!-- 3D model -->
+        <a-assets>
+            <a-asset-item id="model" src="/output.gltf"></a-asset-item>
+        </a-assets>
+
+        <a-marker preset="hiro" smooth="true" smoothCount="10">
             <a-entity
+                id="model-entity"
                 position="0 0 0"
-                scale="0.5 0.5 0.5"
                 rotation="0 0 0"
-                gltf-model="/output.gltf"
+                scale="0.5 0.5 0.5"
+                gltf-model="#model"
                 animation-mixer>
             </a-entity>
         </a-marker>
 
-        <!-- Camera -->
         <a-entity camera></a-entity>
     </a-scene>
 
-    <!-- Custom button -->
-    <button class="custom-button" onclick="toggleModel()">Model Görünürlüğünü Değiştir</button>
-
     <script>
-        // Loading screen'i kaldır
-        window.addEventListener('load', () => {
-            const loader = document.querySelector('.arjs-loader');
-            loader.style.display = 'none';
+        let isRotating = false;
+        const modelEntity = document.querySelector('#model-entity');
+        const loading = document.querySelector('#loading');
+
+        // Model yüklendiğinde loading ekranını kaldır
+        modelEntity.addEventListener('model-loaded', () => {
+            loading.style.display = 'none';
+            console.log('Model başarıyla yüklendi');
         });
 
-        // Model görünürlüğünü değiştir
-        function toggleModel() {
-            const model = document.querySelector('[gltf-model]');
-            model.object3D.visible = !model.object3D.visible;
+        // Model yüklenirken hata olursa
+        modelEntity.addEventListener('model-error', () => {
+            loading.textContent = 'Model yüklenemedi!';
+            console.error('Model yükleme hatası');
+        });
+
+        // Modeli sıfırla
+        function resetModel() {
+            modelEntity.setAttribute('position', '0 0 0');
+            modelEntity.setAttribute('rotation', '0 0 0');
+            modelEntity.setAttribute('scale', '0.5 0.5 0.5');
         }
 
-        // Hata yakalama
-        AFRAME.registerComponent('error-handler', {
-            init: function () {
-                this.el.addEventListener('model-error', function (e) {
-                    console.error('Model yükleme hatası:', e.detail);
-                    alert('Model yüklenirken bir hata oluştu.');
+        // Dönüşü aç/kapat
+        function toggleRotation() {
+            isRotating = !isRotating;
+            if (isRotating) {
+                modelEntity.setAttribute('animation', {
+                    property: 'rotation',
+                    dur: 6000,
+                    to: '0 360 0',
+                    loop: true,
+                    easing: 'linear'
                 });
+            } else {
+                modelEntity.removeAttribute('animation');
             }
-        });
+        }
 
-        // Model yükleme başarılı
-        AFRAME.registerComponent('model-loaded', {
-            init: function () {
-                this.el.addEventListener('model-loaded', function () {
-                    console.log('Model başarıyla yüklendi');
-                });
-            }
+        // Marker bulunduğunda/kaybolduğunda
+        const marker = document.querySelector('a-marker');
+        marker.addEventListener('markerFound', () => {
+            console.log('Marker bulundu');
+        });
+        marker.addEventListener('markerLost', () => {
+            console.log('Marker kayboldu');
         });
     </script>
-  </body>
+</body>
 </html>
