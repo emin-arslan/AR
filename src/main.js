@@ -93,25 +93,48 @@ class ARViewer {
             transition: all 0.3s ease;
         `;
 
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        // AR desteğini kontrol et
+        let arSupported = false;
+
         if ('xr' in navigator) {
-            const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
-            if (isSupported) {
-                arButton.textContent = 'AR Moduna Geç';
-                arButton.addEventListener('click', () => this.startAR());
-            } else {
-                arButton.textContent = 'AR Desteklenmiyor';
-                arButton.style.background = '#999';
-                arButton.style.cursor = 'not-allowed';
-                arButton.addEventListener('click', () => {
-                    alert('Tarayıcınız veya cihazınız AR\'ı desteklemiyor. Lütfen AR destekli bir cihaz ve tarayıcı kullanın.\n\niOS: Safari (iOS 13+)\nAndroid: Chrome (ARCore destekli)');
-                });
+            arSupported = await navigator.xr.isSessionSupported('immersive-ar');
+        }
+
+        // iOS Quick Look desteği
+        if (isIOS && document.createElement('a').relList.supports('ar')) {
+            arSupported = true;
+        }
+
+        // Android Scene Viewer desteği
+        if (isAndroid && navigator.userAgent.includes('Chrome')) {
+            arSupported = true;
+        }
+
+        // WebVR desteği (eski cihazlar için)
+        if ('getVRDisplays' in navigator) {
+            try {
+                const displays = await navigator.getVRDisplays();
+                if (displays.length > 0) {
+                    arSupported = true;
+                }
+            } catch (e) {
+                console.log('WebVR kontrol hatası:', e);
             }
+        }
+
+        if (arSupported) {
+            arButton.textContent = 'AR Moduna Geç';
+            arButton.addEventListener('click', () => this.startAR());
         } else {
             arButton.textContent = 'AR Desteklenmiyor';
             arButton.style.background = '#999';
             arButton.style.cursor = 'not-allowed';
             arButton.addEventListener('click', () => {
-                alert('Tarayıcınız WebXR\'ı desteklemiyor. Lütfen modern bir mobil tarayıcı kullanın.');
+                alert('Bu cihaz veya tarayıcı AR\'ı desteklemiyor. Lütfen AR destekli bir mobil cihaz kullanın.');
             });
         }
 
@@ -120,32 +143,78 @@ class ARViewer {
 
     async startAR() {
         try {
-            const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['hit-test']
-            });
+            // Önce WebXR'ı dene
+            if ('xr' in navigator) {
+                const session = await navigator.xr.requestSession('immersive-ar', {
+                    requiredFeatures: ['hit-test'],
+                    optionalFeatures: ['dom-overlay', 'light-estimation']
+                });
 
-            this.renderer.xr.enabled = true;
-            await this.renderer.xr.setSession(session);
-            this.isInAR = true;
+                this.renderer.xr.enabled = true;
+                await this.renderer.xr.setSession(session);
+                this.isInAR = true;
 
-            // AR modunda modeli yeniden konumlandır
-            if (this.model) {
-                this.model.position.set(0, 0, -1);
-                this.model.scale.set(0.2, 0.2, 0.2);
-            }
-
-            session.addEventListener('end', () => {
-                this.renderer.xr.enabled = false;
-                this.isInAR = false;
+                // AR modunda modeli yeniden konumlandır
                 if (this.model) {
-                    this.model.position.set(0, 0, 0);
-                    this.model.scale.set(0.5, 0.5, 0.5);
+                    this.model.position.set(0, 0, -1);
+                    const box = new THREE.Box3().setFromObject(this.model);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 0.5 / maxDim; // AR için daha küçük ölçek
+                    this.model.scale.set(scale, scale, scale);
                 }
-            });
 
+                session.addEventListener('end', () => {
+                    this.renderer.xr.enabled = false;
+                    this.isInAR = false;
+                    this.resetModel();
+                });
+
+            } else if ('getVRDisplays' in navigator) {
+                // Eski WebVR API'sini dene (bazı Android cihazlar için)
+                const displays = await navigator.getVRDisplays();
+                if (displays.length > 0) {
+                    const display = displays[0];
+                    if (display.capabilities.hasExternalDisplay) {
+                        await display.requestPresent([{ source: this.renderer.domElement }]);
+                        this.isInAR = true;
+                    }
+                }
+            } else {
+                // Quick Look veya Scene Viewer'ı dene
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                const isAndroid = /android/i.test(navigator.userAgent);
+
+                if (isSafari) {
+                    // iOS için Quick Look
+                    const anchor = document.createElement('a');
+                    anchor.setAttribute('rel', 'ar');
+                    anchor.href = '/output.usdz'; // USDZ dosyanız varsa
+                    anchor.click();
+                } else if (isAndroid) {
+                    // Android için Scene Viewer
+                    window.location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${window.location.origin}/output.gltf#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${window.location.origin};end;`;
+                }
+            }
         } catch (error) {
             console.error('AR başlatma hatası:', error);
-            alert('AR modu başlatılamadı. Tarayıcınız AR\'ı desteklemiyor olabilir.');
+            
+            // Fallback olarak Scene Viewer veya Quick Look'u dene
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isAndroid = /android/i.test(navigator.userAgent);
+
+            if (isSafari) {
+                // iOS için Quick Look
+                const anchor = document.createElement('a');
+                anchor.setAttribute('rel', 'ar');
+                anchor.href = '/output.usdz'; // USDZ dosyanız varsa
+                anchor.click();
+            } else if (isAndroid) {
+                // Android için Scene Viewer
+                window.location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${window.location.origin}/output.gltf#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${window.location.origin};end;`;
+            } else {
+                alert('AR başlatılamadı. Lütfen AR destekli bir mobil cihaz kullanın.');
+            }
         }
     }
 
