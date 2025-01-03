@@ -149,138 +149,139 @@ class ARViewer {
 
             if (isIOS) {
                 // iOS için Quick Look
-                const usdzUrl = `https://modelviewer.dev/shared-assets/create-usdz.php?src=${encodeURIComponent(modelUrl)}`;
-                
-                // iOS için özel div oluştur
-                const arDiv = document.createElement('div');
-                arDiv.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 9999;
-                    background: transparent;
-                `;
-                
-                // Quick Look için özel link
+                // Model-viewer'ın USDZ dönüştürme servisi yerine alternatif servis kullan
+                const usdzUrl = `https://api.3dviewer.net/v1/models/convert?input=${encodeURIComponent(modelUrl)}&output=usdz&key=free`;
+
+                // iOS için AR Quick Look başlatma
                 const anchor = document.createElement('a');
                 anchor.setAttribute('rel', 'ar');
                 anchor.setAttribute('href', usdzUrl);
-                anchor.setAttribute('data-usdzalt', modelUrl);
-                anchor.setAttribute('data-title', 'AR Model');
-                anchor.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    opacity: 0;
-                `;
-
-                // iOS için gerekli olan img elementi
-                const img = document.createElement('img');
-                img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-                img.style.width = '100%';
-                img.style.height = '100%';
                 
-                anchor.appendChild(img);
-                arDiv.appendChild(anchor);
-                document.body.appendChild(arDiv);
+                // iOS 12+ için ek özellikler
+                anchor.setAttribute('data-ar', '');
+                anchor.setAttribute('data-hide-if-not-supported', 'true');
+                anchor.setAttribute('data-title', 'View in AR');
+                anchor.setAttribute('data-scale', 'auto');
+                anchor.setAttribute('data-allow-scale-control', 'true');
 
-                // Otomatik tıklama
-                setTimeout(() => {
+                // iOS 13+ için ek özellikler
+                if (parseInt(navigator.userAgent.match(/OS (\d+)_/)[1]) >= 13) {
+                    anchor.setAttribute('data-ar-scale', 'fixed');
+                    anchor.setAttribute('data-ar-plane-detection', 'true');
+                    anchor.setAttribute('data-ar-image-detection', 'true');
+                }
+
+                // Görünmez iframe oluştur
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.onload = () => {
                     anchor.click();
-                    // Tıklamadan sonra div'i kaldır
                     setTimeout(() => {
-                        document.body.removeChild(arDiv);
+                        document.body.removeChild(iframe);
                     }, 1000);
-                }, 100);
+                };
+                
+                document.body.appendChild(iframe);
+                iframe.contentDocument.body.appendChild(anchor);
 
             } else if (isAndroid) {
-                // Android için Scene Viewer
-                const modelViewer = document.createElement('div');
-                modelViewer.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 9999;
-                    background: transparent;
-                `;
-
-                // Scene Viewer için farklı URL formatları dene
-                const urls = [
-                    // Format 1: Doğrudan Scene Viewer
-                    `https://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred&title=AR%20Model`,
-                    // Format 2: Intent URL
-                    `intent://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`,
-                    // Format 3: Market URL
-                    `market://details?id=com.google.ar.core`
+                // Android için gelişmiş Scene Viewer ve fallback mekanizması
+                const fallbackUrl = encodeURIComponent(window.location.href);
+                const modelTitle = encodeURIComponent('3D Model');
+                
+                // Farklı Android sürümleri ve tarayıcılar için URL'ler
+                const sceneViewerUrls = [
+                    // Modern Scene Viewer
+                    `intent://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_preferred&title=${modelTitle}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallbackUrl};end;`,
+                    
+                    // Alternatif Scene Viewer
+                    `intent://arvr.google.com/scene-viewer/1.0?file=${modelUrl}&mode=ar_only#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${fallbackUrl};end;`,
+                    
+                    // Doğrudan AR Core
+                    `market://details?id=com.google.ar.core`,
+                    
+                    // WebXR fallback
+                    modelUrl
                 ];
 
-                let currentUrlIndex = 0;
-                const tryNextUrl = () => {
-                    if (currentUrlIndex < urls.length) {
-                        const iframe = document.createElement('iframe');
-                        iframe.style.cssText = 'width:100%;height:100%;border:none;';
-                        iframe.src = urls[currentUrlIndex];
-                        
-                        modelViewer.innerHTML = '';
-                        modelViewer.appendChild(iframe);
-                        
-                        // URL başarısız olursa bir sonrakini dene
-                        setTimeout(() => {
-                            if (!document.hidden) {
-                                currentUrlIndex++;
-                                tryNextUrl();
+                // Her URL'i sırayla dene
+                const trySceneViewer = async (urls) => {
+                    if (urls.length === 0) {
+                        // Hiçbir yöntem çalışmazsa WebXR'ı dene
+                        if ('xr' in navigator) {
+                            const supported = await navigator.xr.isSessionSupported('immersive-ar');
+                            if (supported) {
+                                this.startWebXR();
+                                return;
                             }
-                        }, 2000);
-                    } else {
-                        // Hiçbir URL çalışmazsa
-                        alert('AR görüntüleyici başlatılamadı. Lütfen ARCore\'un yüklü olduğundan emin olun.');
-                        document.body.removeChild(modelViewer);
+                        }
+                        alert('AR görüntüleyici başlatılamadı. Lütfen ARCore\'u yükleyin veya güncelleyin.');
+                        return;
+                    }
+
+                    const currentUrl = urls[0];
+                    const remainingUrls = urls.slice(1);
+
+                    try {
+                        if (currentUrl.startsWith('market://')) {
+                            window.location.href = currentUrl;
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = currentUrl;
+                            link.click();
+                            
+                            // URL çalışmazsa 1 saniye sonra diğerini dene
+                            setTimeout(() => {
+                                if (!document.hidden) {
+                                    trySceneViewer(remainingUrls);
+                                }
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        console.error('Scene Viewer hatası:', e);
+                        trySceneViewer(remainingUrls);
                     }
                 };
 
-                document.body.appendChild(modelViewer);
-                tryNextUrl();
+                trySceneViewer(sceneViewerUrls);
 
             } else {
-                // WebXR desteği varsa kullan
-                if ('xr' in navigator) {
-                    const session = await navigator.xr.requestSession('immersive-ar', {
-                        requiredFeatures: ['hit-test'],
-                        optionalFeatures: ['dom-overlay', 'light-estimation']
-                    });
-
-                    this.renderer.xr.enabled = true;
-                    await this.renderer.xr.setSession(session);
-                    this.isInAR = true;
-
-                    if (this.model) {
-                        this.model.position.set(0, 0, -1);
-                        const box = new THREE.Box3().setFromObject(this.model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 0.5 / maxDim;
-                        this.model.scale.set(scale, scale, scale);
-                    }
-
-                    session.addEventListener('end', () => {
-                        this.renderer.xr.enabled = false;
-                        this.isInAR = false;
-                        this.resetModel();
-                    });
-                } else {
-                    throw new Error('WebXR not supported');
-                }
+                await this.startWebXR();
             }
         } catch (error) {
             console.error('AR başlatma hatası:', error);
-            alert('AR başlatılamadı. Lütfen cihazınızın ve tarayıcınızın güncel olduğundan emin olun.');
+            alert('AR başlatılamadı. Lütfen desteklenen bir mobil cihaz kullanın.');
         }
+    }
+
+    async startWebXR() {
+        if (!('xr' in navigator)) {
+            throw new Error('WebXR not supported');
+        }
+
+        const session = await navigator.xr.requestSession('immersive-ar', {
+            requiredFeatures: ['hit-test'],
+            optionalFeatures: ['dom-overlay', 'light-estimation']
+        });
+
+        this.renderer.xr.enabled = true;
+        await this.renderer.xr.setSession(session);
+        this.isInAR = true;
+
+        if (this.model) {
+            this.model.position.set(0, 0, -1);
+            const box = new THREE.Box3().setFromObject(this.model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 0.5 / maxDim;
+            this.model.scale.set(scale, scale, scale);
+        }
+
+        session.addEventListener('end', () => {
+            this.renderer.xr.enabled = false;
+            this.isInAR = false;
+            this.resetModel();
+        });
     }
 
     loadModel() {
