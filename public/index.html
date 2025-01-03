@@ -70,19 +70,62 @@
             background-color: #ffffff;
             transition: width 0.3s ease;
         }
+
+        /* Yeni eklenen stiller */
+        .model-selector {
+            position: fixed;
+            top: 32px;
+            left: 32px;
+            z-index: 1000;
+        }
+
+        select {
+            background-color: #ffffff15;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid #ffffff30;
+            color: white;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        select:hover {
+            background-color: #ffffff25;
+        }
+
+        option {
+            background-color: #1a1a1a;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Model seçici dropdown -->
+        <div class="model-selector">
+            <select id="modelSelect" onchange="changeModel()">
+                <option value="suspension">Suspension</option>
+                <option value="cemer">Cemer</option>
+                <option value="autodesk">Autodesk</option>
+            </select>
+        </div>
+
         <model-viewer
-            src="./output.gltf"
+            id="modelViewer"
+            src="./suspension/output.gltf"
             alt="3D model"
             ar
             ar-modes="webxr scene-viewer quick-look"
             camera-controls
             auto-rotate
-            environment-image="https://modelviewer.dev/shared-assets/environments/industrial_sunset_02_1k.hdr"
-            skybox-image="https://modelviewer.dev/shared-assets/environments/industrial_sunset_02_1k.hdr"
+            environment-image="neutral"
+            background-color="#ffffff"
             shadow-intensity="1"
             shadow-softness="1"
             camera-orbit="45deg 55deg 2.5m"
@@ -92,7 +135,6 @@
             loading="eager"
             quick-look-browsers="safari chrome"
             tone-mapping="aces"
-            experimental-pmrem
             auto-rotate-delay="0"
             rotation-per-second="20deg"
             min-camera-orbit="auto auto 5%"
@@ -111,5 +153,13 @@
             </div>
         </model-viewer>
     </div>
+
+    <script>
+        function changeModel() {
+            const modelViewer = document.getElementById('modelViewer');
+            const selectedModel = document.getElementById('modelSelect').value;
+            modelViewer.src = `./${selectedModel}/output.gltf`;
+        }
+    </script>
 </body>
 </html>
