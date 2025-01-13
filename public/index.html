@@ -23,6 +23,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
         }
 
         model-viewer {
@@ -38,7 +39,7 @@
         }
 
         .ar-button {
-            position: fixed;
+            position: absolute;
             bottom: 32px;
             right: 32px;
             background-color: #ffffff15;
@@ -53,6 +54,8 @@
             border-radius: 50px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            margin: 0;
         }
 
         .ar-button:hover {
@@ -77,7 +80,7 @@
 
         /* Yeni eklenen stiller */
         .model-selector {
-            position: fixed;
+            position: absolute;
             top: 32px;
             left: 32px;
             z-index: 1000;
@@ -136,6 +139,44 @@
             to { transform: rotate(360deg); }
         }
 
+        /* AR Modal Stilleri */
+        .ar-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 1002;
+            text-align: center;
+            color: white;
+            max-width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .ar-prompt-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .ar-prompt button {
+            background: #ffffff20;
+            border: 1px solid #ffffff40;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ar-prompt button:hover {
+            background: #ffffff30;
+        }
+
         .hidden {
             opacity: 0;
             pointer-events: none;
@@ -148,6 +189,15 @@
         <div class="loading-spinner"></div>
     </div>
 
+    <!-- AR Prompt Modal -->
+    <div id="arPrompt" class="ar-prompt hidden">
+        <div>AR modunda görüntülemek ister misiniz?</div>
+        <div class="ar-prompt-buttons">
+            <button onclick="startAR()">Evet</button>
+            <button onclick="hideARPrompt()">Hayır</button>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Model seçici dropdown -->
         <div class="model-selector">
@@ -155,6 +205,7 @@
                 <option value="suspension">Suspension</option>
                 <option value="cemer">Cemer</option>
                 <option value="autodesk">Autodesk</option>
+                <option value="ekena">Ekena</option>
             </select>
         </div>
 
@@ -197,6 +248,7 @@
     <script>
         const modelViewer = document.getElementById('modelViewer');
         const loadingScreen = document.getElementById('loadingScreen');
+        const arPrompt = document.getElementById('arPrompt');
 
         // Her model için özel kamera ayarları
         const modelSettings = {
@@ -215,6 +267,13 @@
                 maxCameraOrbit: "auto auto 150%"
             },
             autodesk: {
+                orbit: "0deg 75deg auto",
+                target: "0m 0m 0m",
+                fieldOfView: "30deg",
+                minCameraOrbit: "auto auto 50%",
+                maxCameraOrbit: "auto auto 150%"
+            },
+            ekena: {
                 orbit: "0deg 75deg auto",
                 target: "0m 0m 0m",
                 fieldOfView: "30deg",
@@ -249,14 +308,53 @@
             modelViewer.src = `./${selectedModel}/output.gltf`;
         }
 
+        function startAR() {
+            hideARPrompt();
+            modelViewer.activateAR();
+        }
+
+        function hideARPrompt() {
+            arPrompt.classList.add('hidden');
+        }
+
+        function showARPrompt() {
+            arPrompt.classList.remove('hidden');
+        }
+
         // Sayfa yüklendiğinde varsayılan model için ayarları uygula
         window.addEventListener('load', () => {
-            const settings = modelSettings.suspension;
-            modelViewer.cameraOrbit = settings.orbit;
-            modelViewer.cameraTarget = settings.target;
-            modelViewer.fieldOfView = settings.fieldOfView;
-            modelViewer.minCameraOrbit = settings.minCameraOrbit;
-            modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+            // URL'den model parametresini al
+            const urlParams = new URLSearchParams(window.location.search);
+            const modelParam = urlParams.get('model');
+            
+            // Eğer URL'de geçerli bir model parametresi varsa, o modeli seç
+            if (modelParam && ['suspension', 'cemer', 'autodesk', 'ekena'].includes(modelParam)) {
+                document.getElementById('modelSelect').value = modelParam;
+                const settings = modelSettings[modelParam];
+                modelViewer.src = `./${modelParam}/output.gltf`;
+                modelViewer.cameraOrbit = settings.orbit;
+                modelViewer.cameraTarget = settings.target;
+                modelViewer.fieldOfView = settings.fieldOfView;
+                modelViewer.minCameraOrbit = settings.minCameraOrbit;
+                modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+
+                // Mobil cihazlarda ve URL parametresi varsa AR promptunu göster
+                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    modelViewer.addEventListener('load', () => {
+                        setTimeout(() => {
+                            showARPrompt();
+                        }, 1000); // Model yüklendikten 1 saniye sonra göster
+                    });
+                }
+            } else {
+                // URL'de model parametresi yoksa varsayılan olarak suspension'ı göster
+                const settings = modelSettings.suspension;
+                modelViewer.cameraOrbit = settings.orbit;
+                modelViewer.cameraTarget = settings.target;
+                modelViewer.fieldOfView = settings.fieldOfView;
+                modelViewer.minCameraOrbit = settings.minCameraOrbit;
+                modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+            }
         });
     </script>
 </body>
