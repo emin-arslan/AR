@@ -206,7 +206,7 @@
             <select id="modelSelect" onchange="changeModel()">
                 <option value="suspension">Suspension</option>
                 <option value="cemer">Cemer</option>
-                <option value="autodesk">Autodesk</option>
+                <option value="autocase">Autocase</option>
                 <option value="ekena">Ekena</option>
             </select>
         </div>
@@ -268,7 +268,7 @@
                 minCameraOrbit: "auto auto 50%",
                 maxCameraOrbit: "auto auto 150%"
             },
-            autodesk: {
+            autocase: {
                 orbit: "0deg 75deg auto",
                 target: "0m 0m 0m",
                 fieldOfView: "30deg",
@@ -330,7 +330,7 @@
             const modelParam = urlParams.get('model');
             
             // Eğer URL'de geçerli bir model parametresi varsa, o modeli seç
-            if (modelParam && ['suspension', 'cemer', 'autodesk', 'ekena'].includes(modelParam)) {
+            if (modelParam && ['suspension', 'cemer', 'autocase', 'ekena'].includes(modelParam)) {
                 document.getElementById('modelSelect').value = modelParam;
                 const settings = modelSettings[modelParam];
                 modelViewer.src = `./${modelParam}/output.gltf`;
