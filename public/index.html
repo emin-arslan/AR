@@ -14,12 +14,15 @@
             padding: 0;
             background: #1a1a1a;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
         }
 
         .container {
             position: relative;
             width: 100%;
-            height: 100vh;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -29,7 +32,6 @@
         model-viewer {
             width: 100%;
             height: 100%;
-            background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%);
             --progress-bar-height: 2px;
             --progress-bar-color: #ffffff3b;
             --camera-orbit: auto auto 105%;
@@ -40,14 +42,14 @@
 
         .ar-button {
             position: absolute;
-            bottom: 32px;
-            right: 32px;
+            bottom: 16px;
+            right: 16px;
             background-color: #ffffff15;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid #ffffff30;
             color: white;
-            padding: 12px 24px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
@@ -81,8 +83,8 @@
         /* Yeni eklenen stiller */
         .model-selector {
             position: absolute;
-            top: 32px;
-            left: 32px;
+            top: 16px;
+            left: 16px;
             z-index: 1000;
         }
 
@@ -92,7 +94,7 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid #ffffff30;
             color: white;
-            padding: 12px 24px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
