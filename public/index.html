@@ -201,19 +201,9 @@
     </div>
 
     <div class="container">
-        <!-- Model seçici dropdown -->
-        <div class="model-selector">
-            <select id="modelSelect" onchange="changeModel()">
-                <option value="suspension">Suspension</option>
-                <option value="cemer">Cemer</option>
-                <option value="autocase">Autocase</option>
-                <option value="ekena">Ekena</option>
-            </select>
-        </div>
-
         <model-viewer
             id="modelViewer"
-            src="./suspension/output.gltf"
+            src=""
             alt="3D model"
             ar
             ar-modes="webxr scene-viewer quick-look"
@@ -252,36 +242,13 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const arPrompt = document.getElementById('arPrompt');
 
-        // Her model için özel kamera ayarları
-        const modelSettings = {
-            suspension: {
-                orbit: "0deg 75deg auto",
-                target: "0m 0m 0m",
-                fieldOfView: "30deg",
-                minCameraOrbit: "auto auto 50%",
-                maxCameraOrbit: "auto auto 150%"
-            },
-            cemer: {
-                orbit: "0deg 75deg auto",
-                target: "0m 0m 0m",
-                fieldOfView: "30deg",
-                minCameraOrbit: "auto auto 50%",
-                maxCameraOrbit: "auto auto 150%"
-            },
-            autocase: {
-                orbit: "0deg 75deg auto",
-                target: "0m 0m 0m",
-                fieldOfView: "30deg",
-                minCameraOrbit: "auto auto 50%",
-                maxCameraOrbit: "auto auto 150%"
-            },
-            ekena: {
-                orbit: "0deg 75deg auto",
-                target: "0m 0m 0m",
-                fieldOfView: "30deg",
-                minCameraOrbit: "auto auto 50%",
-                maxCameraOrbit: "auto auto 150%"
-            }
+        // Varsayılan kamera ayarları
+        const defaultSettings = {
+            orbit: "0deg 75deg auto",
+            target: "0m 0m 0m",
+            fieldOfView: "30deg",
+            minCameraOrbit: "auto auto 50%",
+            maxCameraOrbit: "auto auto 150%"
         };
 
         // Model yüklenme olaylarını dinle
@@ -293,22 +260,6 @@
             console.error('Model yüklenirken hata oluştu');
             loadingScreen.classList.add('hidden');
         });
-
-        function changeModel() {
-            const selectedModel = document.getElementById('modelSelect').value;
-            loadingScreen.classList.remove('hidden');
-
-            // Seçilen modelin ayarlarını uygula
-            const settings = modelSettings[selectedModel];
-            modelViewer.cameraOrbit = settings.orbit;
-            modelViewer.cameraTarget = settings.target;
-            modelViewer.fieldOfView = settings.fieldOfView;
-            modelViewer.minCameraOrbit = settings.minCameraOrbit;
-            modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
-
-            // Yeni modeli yükle
-            modelViewer.src = `./${selectedModel}/output.gltf`;
-        }
 
         function startAR() {
             hideARPrompt();
@@ -323,39 +274,35 @@
             arPrompt.classList.remove('hidden');
         }
 
-        // Sayfa yüklendiğinde varsayılan model için ayarları uygula
+        // Sayfa yüklendiğinde
         window.addEventListener('load', () => {
             // URL'den model parametresini al
             const urlParams = new URLSearchParams(window.location.search);
             const modelParam = urlParams.get('model');
             
-            // Eğer URL'de geçerli bir model parametresi varsa, o modeli seç
-            if (modelParam && ['suspension', 'cemer', 'autocase', 'ekena'].includes(modelParam)) {
-                document.getElementById('modelSelect').value = modelParam;
-                const settings = modelSettings[modelParam];
+            if (modelParam) {
+                // Model yolunu ayarla
                 modelViewer.src = `./${modelParam}/output.gltf`;
-                modelViewer.cameraOrbit = settings.orbit;
-                modelViewer.cameraTarget = settings.target;
-                modelViewer.fieldOfView = settings.fieldOfView;
-                modelViewer.minCameraOrbit = settings.minCameraOrbit;
-                modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+                
+                // Kamera ayarlarını uygula
+                modelViewer.cameraOrbit = defaultSettings.orbit;
+                modelViewer.cameraTarget = defaultSettings.target;
+                modelViewer.fieldOfView = defaultSettings.fieldOfView;
+                modelViewer.minCameraOrbit = defaultSettings.minCameraOrbit;
+                modelViewer.maxCameraOrbit = defaultSettings.maxCameraOrbit;
 
-                // Mobil cihazlarda ve URL parametresi varsa AR promptunu göster
+                // Mobil cihazlarda AR promptunu göster
                 if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     modelViewer.addEventListener('load', () => {
                         setTimeout(() => {
                             showARPrompt();
-                        }, 1000); // Model yüklendikten 1 saniye sonra göster
+                        }, 1000);
                     });
                 }
             } else {
-                // URL'de model parametresi yoksa varsayılan olarak suspension'ı göster
-                const settings = modelSettings.suspension;
-                modelViewer.cameraOrbit = settings.orbit;
-                modelViewer.cameraTarget = settings.target;
-                modelViewer.fieldOfView = settings.fieldOfView;
-                modelViewer.minCameraOrbit = settings.minCameraOrbit;
-                modelViewer.maxCameraOrbit = settings.maxCameraOrbit;
+                // Model parametresi yoksa hata mesajı gösterilebilir
+                console.error('Model parametresi bulunamadı');
+                // İsteğe bağlı: Kullanıcıya görsel bir hata mesajı gösterilebilir
             }
         });
     </script>
