@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Görüntüleyici</title>
+    <title>3D Model Viewer</title>
     
     <!-- Model-viewer kütüphanesi -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
@@ -193,10 +193,10 @@
 
     <!-- AR Prompt Modal -->
     <div id="arPrompt" class="ar-prompt hidden">
-        <div>AR modunda görüntülemek ister misiniz?</div>
+        <div>Would you like to view in AR mode?</div>
         <div class="ar-prompt-buttons">
-            <button onclick="startAR()">Evet</button>
-            <button onclick="hideARPrompt()">Hayır</button>
+            <button onclick="startAR()">Yes</button>
+            <button onclick="hideARPrompt()">No</button>
         </div>
     </div>
 
@@ -228,7 +228,7 @@
             poster="none"
         >
             <button slot="ar-button" class="ar-button">
-                AR'da Görüntüle
+                View in AR
             </button>
 
             <div class="progress-bar" slot="progress-bar">
@@ -257,7 +257,7 @@
         });
 
         modelViewer.addEventListener('error', () => {
-            console.error('Model yüklenirken hata oluştu');
+            console.error('Error loading model');
             loadingScreen.classList.add('hidden');
         });
 
@@ -276,22 +276,22 @@
 
         // Sayfa yüklendiğinde
         window.addEventListener('load', () => {
-            // URL'den model parametresini al
+            // Get model parameter from URL
             const urlParams = new URLSearchParams(window.location.search);
             const modelParam = urlParams.get('model');
             
             if (modelParam) {
-                // Model yolunu ayarla
+                // Set model path
                 modelViewer.src = `./${modelParam}/output.gltf`;
                 
-                // Kamera ayarlarını uygula
+                // Apply camera settings
                 modelViewer.cameraOrbit = defaultSettings.orbit;
                 modelViewer.cameraTarget = defaultSettings.target;
                 modelViewer.fieldOfView = defaultSettings.fieldOfView;
                 modelViewer.minCameraOrbit = defaultSettings.minCameraOrbit;
                 modelViewer.maxCameraOrbit = defaultSettings.maxCameraOrbit;
 
-                // Mobil cihazlarda AR promptunu göster
+                // Show AR prompt on mobile devices
                 if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     modelViewer.addEventListener('load', () => {
                         setTimeout(() => {
@@ -300,9 +300,9 @@
                     });
                 }
             } else {
-                // Model parametresi yoksa hata mesajı gösterilebilir
-                console.error('Model parametresi bulunamadı');
-                // İsteğe bağlı: Kullanıcıya görsel bir hata mesajı gösterilebilir
+                // Show error if model parameter is not found
+                console.error('Model parameter not found');
+                // Optional: A visual error message can be shown to the user
             }
         });
     </script>
