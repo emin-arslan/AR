@@ -212,13 +212,14 @@
             camera-controls
             auto-rotate
             environment-image="neutral"
-            background-color="#ffffff"
+            background-color="#1a1a1a"
             shadow-intensity="1"
             shadow-softness="1"
             exposure="1"
             ar-placement="floor"
             ar-scale="auto"
             loading="eager"
+            reveal="manual"
             quick-look-browsers="safari chrome"
             tone-mapping="aces"
             auto-rotate-delay="0"
@@ -227,7 +228,6 @@
             touch-action="pan-y"
             auto-center
             bounds="tight"
-            poster="none"
         >
             <button slot="ar-button" class="ar-button">
                 AR'da Görüntüle
@@ -261,6 +261,7 @@
         // Model yüklenme olaylarını dinle
         modelViewer.addEventListener('load', () => {
             loadingScreen.classList.add('hidden');
+            modelViewer.dismissPoster();
         });
 
         modelViewer.addEventListener('error', (error) => {
@@ -281,26 +282,6 @@
             arPrompt.classList.remove('hidden');
         }
 
-        // Modeli yükle ve no-cors modunu kullan
-        async function loadModel(url) {
-            try {
-                const response = await fetch(url, {
-                    mode: 'no-cors',
-                    headers: {
-                        'Accept': 'application/json',
-                    }
-                });
-                
-                if (response.type === 'opaque') {
-                    modelViewer.src = url;
-                } else {
-                    console.error('Model yüklenemedi');
-                }
-            } catch (error) {
-                console.error('Model yükleme hatası:', error);
-            }
-        }
-
         // Generate public URL for the model
         function generateModelUrl(userId = 'user123', modelId = 'model1') {
             return `${PUBLIC_URL}/${userId}/${modelId}/output.gltf`;
@@ -313,12 +294,12 @@
             const userId = urlParams.get('userId') || 'user123';
             const modelId = urlParams.get('modelId') || 'model1';
             
-            // Model URL'ini oluştur ve yükle
+            // Model URL'ini oluştur
             const modelUrl = generateModelUrl(userId, modelId);
             console.log('Loading model from:', modelUrl);
             
-            // Modeli yükle
-            loadModel(modelUrl);
+            // Model viewer'a URL'i set et
+            modelViewer.src = modelUrl;
             
             // Kamera ayarlarını uygula
             modelViewer.cameraOrbit = defaultSettings.orbit;
