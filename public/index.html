@@ -245,9 +245,7 @@
         const arPrompt = document.getElementById('arPrompt');
 
         // R2 Configuration
-        const ACCOUNT_ID = '426b51f95af8f8bb3ff33e3e4f1b38ab';
-        const BUCKET_NAME = 'model';
-        const PUBLIC_URL = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}`;
+        const PUBLIC_URL = 'https://pub-d0604efb1a0441cb810e07fe70e5f8dd.r2.dev';
         
         // Varsayılan kamera ayarları
         const defaultSettings = {
@@ -282,54 +280,9 @@
             arPrompt.classList.remove('hidden');
         }
 
-        // GLTF model ve ilişkili dosyaları yükle
-        async function loadGLTFModel(userId = 'user123', modelId = 'model1') {
-            try {
-                // Ana GLTF dosyasını yükle
-                const gltfResponse = await fetch(`${PUBLIC_URL}/${userId}/${modelId}/output.gltf`, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
-
-                if (!gltfResponse.ok) {
-                    throw new Error(`GLTF dosyası yüklenemedi: ${gltfResponse.status}`);
-                }
-
-                const gltfData = await gltfResponse.json();
-
-                // GLTF içindeki buffers ve images için base URL'i ayarla
-                if (gltfData.buffers) {
-                    gltfData.buffers.forEach(buffer => {
-                        if (!buffer.uri.startsWith('http')) {
-                            buffer.uri = `${PUBLIC_URL}/${userId}/${modelId}/${buffer.uri}`;
-                        }
-                    });
-                }
-
-                if (gltfData.images) {
-                    gltfData.images.forEach(image => {
-                        if (!image.uri.startsWith('http')) {
-                            image.uri = `${PUBLIC_URL}/${userId}/${modelId}/${image.uri}`;
-                        }
-                    });
-                }
-
-                // Güncellenmiş GLTF verisini Blob olarak oluştur
-                const gltfBlob = new Blob([JSON.stringify(gltfData)], { type: 'application/json' });
-                const gltfUrl = URL.createObjectURL(gltfBlob);
-
-                // Model viewer'a URL'i set et
-                modelViewer.src = gltfUrl;
-
-                // Blob URL'ini temizle
-                modelViewer.addEventListener('load', () => {
-                    URL.revokeObjectURL(gltfUrl);
-                }, { once: true });
-
-            } catch (error) {
-                console.error('Model yükleme hatası:', error);
-                loadingScreen.classList.add('hidden');
-            }
+        // Generate model URL
+        function generateModelUrl(userId = 'user123', modelId = 'model1') {
+            return `${PUBLIC_URL}/${userId}/${modelId}/output.gltf`;
         }
 
         // Sayfa yüklendiğinde
@@ -339,8 +292,12 @@
             const userId = urlParams.get('userId') || 'user123';
             const modelId = urlParams.get('modelId') || 'model1';
             
-            // GLTF modeli yükle
-            loadGLTFModel(userId, modelId);
+            // Model URL'ini oluştur
+            const modelUrl = generateModelUrl(userId, modelId);
+            console.log('Loading model from:', modelUrl);
+            
+            // Model viewer'a URL'i set et
+            modelViewer.src = modelUrl;
             
             // Kamera ayarlarını uygula
             modelViewer.cameraOrbit = defaultSettings.orbit;
