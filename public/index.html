@@ -242,6 +242,12 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const arPrompt = document.getElementById('arPrompt');
 
+        // S3 Configuration
+        const S3_ENDPOINT = 'https://426b51f95af8f8bb3ff33e3e4f1b38ab.r2.cloudflarestorage.com';
+        const ACCESS_KEY = 'c03c3dbfe06037125a5dbf129569a679';
+        const SECRET_KEY = '6804d96fb679814a16aad655f4245ec05e504a3354805188846efd20844a14fc';
+        const BUCKET_NAME = 'model';
+
         // Varsayılan kamera ayarları
         const defaultSettings = {
             orbit: "0deg 75deg auto",
@@ -257,7 +263,7 @@
         });
 
         modelViewer.addEventListener('error', () => {
-            console.error('Error loading model');
+            console.error('Model yüklenirken hata oluştu');
             loadingScreen.classList.add('hidden');
         });
 
@@ -274,35 +280,38 @@
             arPrompt.classList.remove('hidden');
         }
 
+        // Generate S3 URL for the model
+        function generateModelUrl(userId = 'user123', modelId = 'model1') {
+            return `${S3_ENDPOINT}/${BUCKET_NAME}/${userId}/${modelId}/output.gltf`;
+        }
+
         // Sayfa yüklendiğinde
         window.addEventListener('load', () => {
-            // Get model parameter from URL
+            // URL'den parametreleri al
             const urlParams = new URLSearchParams(window.location.search);
-            const modelParam = urlParams.get('model');
+            const userId = urlParams.get('userId') || 'user123';  // default: user123
+            const modelId = urlParams.get('modelId') || 'model1'; // default: model1
             
-            if (modelParam) {
-                // Set model path
-                modelViewer.src = `./${modelParam}/output.gltf`;
-                
-                // Apply camera settings
-                modelViewer.cameraOrbit = defaultSettings.orbit;
-                modelViewer.cameraTarget = defaultSettings.target;
-                modelViewer.fieldOfView = defaultSettings.fieldOfView;
-                modelViewer.minCameraOrbit = defaultSettings.minCameraOrbit;
-                modelViewer.maxCameraOrbit = defaultSettings.maxCameraOrbit;
+            // Model URL'ini oluştur
+            const modelUrl = generateModelUrl(userId, modelId);
+            
+            // Model viewer'a URL'i set et
+            modelViewer.src = modelUrl;
+            
+            // Kamera ayarlarını uygula
+            modelViewer.cameraOrbit = defaultSettings.orbit;
+            modelViewer.cameraTarget = defaultSettings.target;
+            modelViewer.fieldOfView = defaultSettings.fieldOfView;
+            modelViewer.minCameraOrbit = defaultSettings.minCameraOrbit;
+            modelViewer.maxCameraOrbit = defaultSettings.maxCameraOrbit;
 
-                // Show AR prompt on mobile devices
-                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    modelViewer.addEventListener('load', () => {
-                        setTimeout(() => {
-                            showARPrompt();
-                        }, 1000);
-                    });
-                }
-            } else {
-                // Show error if model parameter is not found
-                console.error('Model parameter not found');
-                // Optional: A visual error message can be shown to the user
+            // Mobil cihazlarda AR promptunu göster
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                modelViewer.addEventListener('load', () => {
+                    setTimeout(() => {
+                        showARPrompt();
+                    }, 1000);
+                });
             }
         });
     </script>
