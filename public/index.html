@@ -197,6 +197,8 @@
     <div id="arPrompt" class="ar-prompt hidden">
         <div>Would you like to view in AR mode?</div>
         <div class="ar-prompt-buttons">
+            <button onclick="startAR()">Evet</button>
+            <button onclick="hideARPrompt()">Hayır</button>
             <button onclick="startAR()">Yes</button>
             <button onclick="hideARPrompt()">No</button>
         </div>
@@ -230,6 +232,7 @@
             poster="none"
         >
             <button slot="ar-button" class="ar-button">
+                AR'da Görüntüle
                 View in AR
             </button>
 
@@ -244,6 +247,11 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const arPrompt = document.getElementById('arPrompt');
 
+        // R2 Configuration
+        const ACCOUNT_ID = '426b51f95af8f8bb3ff33e3e4f1b38ab';
+        const BUCKET_NAME = 'model';
+        const PUBLIC_URL = `https://${ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}`;
+        
         // Varsayılan kamera ayarları
         const defaultSettings = {
             orbit: "0deg 75deg auto",
@@ -258,9 +266,8 @@
             loadingScreen.classList.add('hidden');
         });
 
-        modelViewer.addEventListener('error', () => {
-            console.error('Model yüklenirken hata oluştu');
-            console.error('Error loading model');
+        modelViewer.addEventListener('error', (error) => {
+            console.error('Model loading error:', error);
             loadingScreen.classList.add('hidden');
         });
 
@@ -277,6 +284,11 @@
             arPrompt.classList.remove('hidden');
         }
 
+        // Generate public URL for the model
+        function generateModelUrl(userId = 'user123', modelId = 'model1') {
+            return `${PUBLIC_URL}/${userId}/${modelId}/output.gltf`;
+        }
+
         // Sayfa yüklendiğinde
         window.addEventListener('load', () => {
             // URL'den model parametresini al
@@ -287,7 +299,7 @@
             if (modelParam) {
                 // Model yolunu ayarla
                 // Set model path
-                modelViewer.src = `./${modelParam}/output.gltf`;
+                modelViewer.src = generateModelUrl(modelParam);
                 
                 // Kamera ayarlarını uygula
                 // Apply camera settings
