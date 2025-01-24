@@ -242,12 +242,9 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const arPrompt = document.getElementById('arPrompt');
 
-        // S3 Configuration
-        const S3_ENDPOINT = 'https://426b51f95af8f8bb3ff33e3e4f1b38ab.r2.cloudflarestorage.com';
-        const ACCESS_KEY = 'c03c3dbfe06037125a5dbf129569a679';
-        const SECRET_KEY = '6804d96fb679814a16aad655f4245ec05e504a3354805188846efd20844a14fc';
-        const BUCKET_NAME = 'model';
-
+        // R2 Configuration
+        const PUBLIC_URL = 'https://pub-c5a17f5a96674b68a9e8c3e2c2e2f611.r2.dev';
+        
         // Varsayılan kamera ayarları
         const defaultSettings = {
             orbit: "0deg 75deg auto",
@@ -262,8 +259,8 @@
             loadingScreen.classList.add('hidden');
         });
 
-        modelViewer.addEventListener('error', () => {
-            console.error('Model yüklenirken hata oluştu');
+        modelViewer.addEventListener('error', (error) => {
+            console.error('Model loading error:', error);
             loadingScreen.classList.add('hidden');
         });
 
@@ -280,9 +277,9 @@
             arPrompt.classList.remove('hidden');
         }
 
-        // Generate S3 URL for the model
+        // Generate public URL for the model
         function generateModelUrl(userId = 'user123', modelId = 'model1') {
-            return `${S3_ENDPOINT}/${BUCKET_NAME}/${userId}/${modelId}/output.gltf`;
+            return `${PUBLIC_URL}/${userId}/${modelId}/output.gltf`;
         }
 
         // Sayfa yüklendiğinde
@@ -294,6 +291,7 @@
             
             // Model URL'ini oluştur
             const modelUrl = generateModelUrl(userId, modelId);
+            console.log('Loading model from:', modelUrl);
             
             // Model viewer'a URL'i set et
             modelViewer.src = modelUrl;
